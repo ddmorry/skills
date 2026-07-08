@@ -33,6 +33,8 @@ skills/
 
 リポジトリ直下には、スキル群が共有する語彙の正本 `CONTEXT.md` と、スキル設計上の決定を記録した `docs/adr/` がある。スキルを書く・直すときはこの2つに従う（用語は CONTEXT.md、委譲アーキテクチャ・受け入れゲート・Design Doc の形・設計段階コンダクターの形は ADR-0001〜0004）。
 
+リポジトリ直下にはさらに、会社共有への配布を制御する `company-skills.txt`（マニフェスト）と、配布実体の `scripts/publish-company-skills.sh` がある（用途は後述「会社共有リポジトリ（soramichi-skills）へのミラー配布」）。
+
 補助ファイル（書式定義や参考資料）を持つスキルは、それらも同じ `skills/<skill-name>/` 配下に置いて SKILL.md から相対リンクで参照する。
 
 sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: frontmatter に `name` / `description` / `model` / `tools`）を `agents/` サブディレクトリに同梱する（そこが定義の唯一のソース。`~/.claude/agents/` へはシンボリックリンクを貼る — 次節参照）。
@@ -85,9 +87,22 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 
 **コピーは作らないこと。** リンクさえ貼れば以降の編集はリポジトリ側だけで反映される。コピーを作るとどちらが最新か分からなくなる。既存スキルを直したときも、リンクが正しく張られていれば追加の同期作業は不要。スキルを**改名**したときは、旧名のリンクが個人グローバルと全消費者に残らないよう掃除する（改名忘れの残骸リンクは「あるのに動かない別物」を生む）。
 
+（この symlink 運用は**個人環境でスキルを「使う」ため**のもの。会社の他メンバーへ**配布**するのは別経路 = 次節のミラー。symlink は machine 依存の絶対パスを含むため git で共有できない。）
+
+## 会社共有リポジトリ（soramichi-skills）へのミラー配布
+
+会社で共有するスキルは、この正本リポジトリから **`soramichi-dev/soramichi-skills`**（GitHub）へ**一方向ミラー**で配布する。ローカル作業コピーは **`code/soramichi/skills`**（`code/soramichi` は git リポジトリではない素のディレクトリなので、その直下に独立リポジトリとして置ける＝入れ子にならない）。
+
+- **正本は常に `code/skills`。** `code/soramichi/skills` は手編集しない下流ミラー。個人スキルも会社スキルもどちらもここで開発し、会社共有分だけをミラーへ押し出す。ミラー側を直接いじると次回同期で上書きされる。
+- **何を会社共有にするかは `company-skills.txt`（マニフェスト）で決める。** 1 行 1 スキル（`skills/` 配下のディレクトリ名、`#` はコメント）。ここに無いものは個人専用でミラーに出ない。一覧から外したスキルは次回同期でミラー側から prune（削除）される。
+- スキル本体に加え、`build-feature` / `design-feature` が「スキル開発リポジトリの CONTEXT.md・docs/adr/ を正とする」と参照するため、**`CONTEXT.md` と `docs/adr/` も一緒にミラー**する（agents/ は各スキル配下なので同梱で付いてくる）。teammate 向け `README.md` はスクリプトが自動生成する。
+- 実体は **`scripts/publish-company-skills.sh`**、運転役は **`publish-company-skills` スキル**。`--dry-run`（差分確認）→ 無印（ミラー＋ローカル commit・push しない）→ `--push`（origin へ）の順で使う。初回は `git init` で `code/soramichi/skills` を作り、remote と identity を設定する。
+- **push は soramichi-dev への outward。** 使用アカウント／push 権限に注意する。`code/soramichi/.envrc` が `GH_CONFIG_DIR` を soramichi 用に分離しているが、**環境に `GH_TOKEN` があるとそれが優先される**（現状 `GH_TOKEN` は ddmorry）。soramichi アカウントで出すなら `code/soramichi/skills` 配下で direnv を効かせて `git push` するのが確実。commit の author はミラー側 local config で `daisuke_mori@sora-michi.com` に固定。
+- teammate 側のインストールは、clone 後に `skills/*` を各自の config dir の `skills/` へ、`skills/*/agents/*.md` を `agents/` へ symlink する（手順は生成される README 参照）。
+
 ## スキルの出所と管理範囲（正本の所在）
 
-`~/.claude/skills/` には複数の出所のスキルが同居している。**このリポジトリが正本（編集すべき本物）なのは以下の5つだけ**。それ以外は別ソースが正本なので、ここでは編集しない（`~/.claude/skills/` 側で直接いじっても上流に反映されず、再インストールで上書きされる）。どのスキルを触るときも「正本はどこか」を最初に確かめる。
+`~/.claude/skills/` には複数の出所のスキルが同居している。**このリポジトリが正本（編集すべき本物）なのは以下の6つだけ**。それ以外は別ソースが正本なので、ここでは編集しない（`~/.claude/skills/` 側で直接いじっても上流に反映されず、再インストールで上書きされる）。どのスキルを触るときも「正本はどこか」を最初に確かめる。
 
 | スキル | 正本（編集する場所） | `~/.claude` への現れ方・更新方法 |
 |---|---|---|
@@ -96,6 +111,7 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 | `build-feature` | **このリポジトリ** (`skills/build-feature/`) | 同上。2026-07 に `run-epic` から改名（旧版=メインセッション自身が実装する実ディレクトリは、委譲版へ刷新した際 symlink に置換済み） |
 | `to-design-doc` | **このリポジトリ** (`skills/to-design-doc/`) | 同上 |
 | `design-feature` | **このリポジトリ** (`skills/design-feature/`) | 同上 |
+| `publish-company-skills` | **このリポジトリ** (`skills/publish-company-skills/`) | 同上。会社共有ミラーの配布運用スキル（前節参照）。**個人専用＝`company-skills.txt` に載せず会社リポには出さない** |
 | `caveman` / `diagnose` / `tdd` など一群 | **mattpocock/skills（上流・GitHub）** | `npx skills@latest add mattpocock/skills` でインストールした実ディレクトリ。更新も同コマンドの再実行で行う。ここで手編集しない |
 | `orca-cli` / `computer-use` / `orchestration` | **Orca**（`~/.agents/skills/` 配下） | `~/.claude/skills/` から `../../.agents/skills/` への symlink。Orca 側が正本 |
 
