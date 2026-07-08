@@ -1,0 +1,71 @@
+name: check-vendored-skills
+
+# 上流 mattpocock/skills のドリフトを定期検知する。
+# vendor-deps.json に pin した内蔵コピー（vendored）／参照名（referenced）を
+# scripts/check-vendored-skills.sh で照合し、ドリフトがあれば Issue を起票／更新する。
+# 一致に戻ったら該当 Issue を自動クローズする。
+
+on:
+  schedule:
+    - cron: '17 0 * * 1'   # 毎週月曜 00:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: check-vendored-skills
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: '🔄 上流 mattpocock/skills のドリフト検知'
+      LABEL: upstream-drift
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure label exists
+        run: gh label create "$LABEL" --color FBCA04 --description "上流スキルのドリフト" --repo "$GITHUB_REPOSITORY" 2>/dev/null || true
+
+      - name: Run drift check
+        id: check
+        run: |
+          set +e
+          bash scripts/check-vendored-skills.sh > report.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          echo "----- report.md -----"
+          cat report.md
+
+      - name: Find existing open issue
+        id: issue
+        run: |
+          num="$(gh issue list --state open --label "$LABEL" --json number --jq '.[0].number' --repo "$GITHUB_REPOSITORY")"
+          echo "number=$num" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update drift issue
+        if: steps.check.outputs.code == '3'
+        run: |
+          if [ -n "${{ steps.issue.outputs.number }}" ]; then
+            gh issue edit "${{ steps.issue.outputs.number }}" --body-file report.md --repo "$GITHUB_REPOSITORY"
+            gh issue comment "${{ steps.issue.outputs.number }}" --repo "$GITHUB_REPOSITORY" \
+              --body "🔁 $(date -u +%Y-%m-%dT%H:%M:%SZ) 再検知。本文を最新のレポートに更新しました。"
+          else
+            gh issue create --title "$TITLE" --label "$LABEL" --body-file report.md --repo "$GITHUB_REPOSITORY"
+          fi
+
+      - name: Close issue when back in sync
+        if: steps.check.outputs.code == '0' && steps.issue.outputs.number != ''
+        run: |
+          gh issue comment "${{ steps.issue.outputs.number }}" --repo "$GITHUB_REPOSITORY" \
+            --body "✅ $(date -u +%Y-%m-%dT%H:%M:%SZ) 上流と一致に戻ったため自動クローズします。"
+          gh issue close "${{ steps.issue.outputs.number }}" --repo "$GITHUB_REPOSITORY"
+
+      - name: Fail step on unexpected error
+        if: steps.check.outputs.code != '0' && steps.check.outputs.code != '3'
+        run: |
+          echo "check スクリプトが想定外の終了コード (${{ steps.check.outputs.code }}) を返しました" >&2
+          exit 1

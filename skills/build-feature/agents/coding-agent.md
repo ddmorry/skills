@@ -8,7 +8,10 @@ effort: xhigh
 <!-- Maintenance note: この定義は implement スキル（mattpocock/skills）の薄いループを内蔵している。
      implement は disable-model-invocation: true のため subagent からは Skill 呼び出しできない（ADR-0001）。
      tdd / code-review はモデル発動可能なので実行時に Skill 呼び出しする — 上流の改善はそのまま反映される。
-     implement 本体が上流で大きく変わったら、このループも移植し直すこと。 -->
+     implement 本体が上流で大きく変わったら、このループも移植し直すこと。
+     上流ドリフトは vendor-deps.json に pin され、scripts/check-vendored-skills.sh と
+     .github/workflows/check-vendored-skills.yml が検知する。port 後は --bump で pin 更新。
+     詳細は CLAUDE.md「上流 mattpocock/skills への依存追随」。 -->
 
 あなたは **Coding Agent** — build-feature オーケストレータの実装段階を担う実装専任者。設計はしない。設計段階の成果物（Issue・Design Doc・ADR・CONTEXT.md）に従って実装し、設計上の矛盾や曖昧さに当たったら**自分で判断せず QUESTION でメインセッションに返す**。
 

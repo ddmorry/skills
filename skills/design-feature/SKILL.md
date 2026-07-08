@@ -1,20 +1,20 @@
 ---
 name: design-feature
-description: 設計段階（grill → to-prd → to-issues → to-design-doc → ship）を完走させる対話型コンダクター。build-feature（AFK・無人）の対。既存スキルを複製せず順番に運転し、flag 付きスキル（to-prd / to-issues）は要所でユーザーにスラッシュコマンドを打ってもらい、モデル発動可能なスキル（grilling / to-design-doc / ship）は直接呼ぶ。成果物検出で途中からの再開にも対応。ユーザーが「機能を設計して」「設計段階を回して」「設計パイプラインを回して」「grill から Issue 分解まで進めて」「build-feature（旧 run-epic）の準備をして」「Design Doc まで完走して」など、実装前の設計チェーンを通しで進める指示をしたとき必ずこのスキルを使う。
+description: 設計段階（grill → to-spec → to-tickets → to-design-doc → ship）を完走させる対話型コンダクター。build-feature（AFK・無人）の対。既存スキルを複製せず順番に運転し、flag 付きスキル（to-spec / to-tickets）は要所でユーザーにスラッシュコマンドを打ってもらい、モデル発動可能なスキル（grilling / to-design-doc / ship）は直接呼ぶ。成果物検出で途中からの再開にも対応。ユーザーが「機能を設計して」「設計段階を回して」「設計パイプラインを回して」「grill から Issue 分解まで進めて」「build-feature（旧 run-epic）の準備をして」「Design Doc まで完走して」など、実装前の設計チェーンを通しで進める指示をしたとき必ずこのスキルを使う。
 argument-hint: "設計したい機能の説明（途中再開時は PRD/Epic の Issue 番号。省略時は会話中の機能）"
 ---
 
 # Design Feature — 設計段階を完走するコンダクター
 
-build-feature（実装段階の AFK オーケストレータ）の対になる HITL コンダクター。機能（Feature）1件の設計段階チェーン grill → to-prd → to-issues → to-design-doc → ship を、既存スキルを複製せずに順番に運転する。持ち物は3つだけ: **順序**・**現在地の検出**・**工程間の引き継ぎ**。実体の作業と人間チェックポイントは各工程のスキル自身が持つ。
+build-feature（実装段階の AFK オーケストレータ）の対になる HITL コンダクター。機能（Feature）1件の設計段階チェーン grill → to-spec → to-tickets → to-design-doc → ship を、既存スキルを複製せずに順番に運転する。持ち物は3つだけ: **順序**・**現在地の検出**・**工程間の引き継ぎ**。実体の作業と人間チェックポイントは各工程のスキル自身が持つ。
 
 用語は CONTEXT.md、方針の背景は docs/adr/0004（このスキルの形）と 0003（Design Doc）を正とする。
 
 ## 大原則
 
-- **flag 付きスキルは代行しない**: `setup-matt-pocock-skills` / `to-prd` / `to-issues` は `disable-model-invocation: true` で Skill ツールから呼べない（ユーザー専用）。案内して待ち、ユーザーがスラッシュコマンドを打つ → 同一セッションなので文脈を引き継いで走る → 完了を成果物で確認したら進行を再開する。中身を Read して代行することも、方法論を複製することもしない（ADR-0004）。
+- **flag 付きスキルは代行しない**: `setup-matt-pocock-skills` / `to-spec` / `to-tickets` は `disable-model-invocation: true` で Skill ツールから呼べない（ユーザー専用）。案内して待ち、ユーザーがスラッシュコマンドを打つ → 同一セッションなので文脈を引き継いで走る → 完了を成果物で確認したら進行を再開する。中身を Read して代行することも、方法論を複製することもしない（ADR-0004）。
 - **モデル発動可能なスキルは直接呼ぶ**: `grilling` / `domain-modeling` / `grill-yourself-with-docs` / `to-design-doc` / `ship` は Skill ツールで呼ぶ（`grilling`・`domain-modeling` は matt pocock スキル＝別途セットアップ。未導入時のフォールバックは工程1参照）。
-- **コンダクターが増やす質問はルート確定の1問だけ**。人間チェックポイントは各スキル固有のもの（grill の対話・to-prd のシーム確認・to-issues のスライス承認・to-design-doc のドラフト承認）に委ね、二重に確認しない。工程の境目は「✅ PRD 起票済み。次は `/to-issues` を打ってください」式の短い進行案内に徹する。
+- **コンダクターが増やす質問はルート確定の1問だけ**。人間チェックポイントは各スキル固有のもの（grill の対話・to-spec のシーム確認・to-tickets のスライス承認・to-design-doc のドラフト承認）に委ね、二重に確認しない。工程の境目は「✅ spec（PRD）起票済み。次は `/to-tickets` を打ってください」式の短い進行案内に徹する。
 
 ## 起動時
 
@@ -38,18 +38,18 @@ build-feature（実装段階の AFK オーケストレータ）の対になる H
 
 grill 完了後、機能の規模からルートを推奨し、AskUserQuestion で確定する:
 
-- **to-prd の要否**: スライス4件以上が見込まれる大きめの機能 → to-prd を推奨。小さい機能は to-issues 直行を推奨。
+- **to-spec の要否**: スライス4件以上が見込まれる大きめの機能 → to-spec を推奨。小さい機能は to-tickets 直行を推奨。
 - **to-design-doc の要否**: 任意（ADR-0003）。委譲先の下位モデルが迷いそうな機能（複数スライスにまたがる設計・新しいインターフェース・状態機械など）なら推奨。
 
 確定後はこのルートで進行し、途中で聞き直さない。
 
-### 3. to-prd（ルートで選んだ場合）
+### 3. to-spec（ルートで選んだ場合）
 
-「`/to-prd` を打ってください」と案内して待つ。PRD Issue の起票を確認したら次へ。
+「`/to-spec` を打ってください」と案内して待つ。spec（PRD）Issue の起票を確認したら次へ。
 
-### 4. to-issues
+### 4. to-tickets
 
-「`/to-issues` を打ってください」と案内して待つ。スライス Issue の起票を確認したら次へ。
+「`/to-tickets` を打ってください」と案内して待つ。スライス Issue の起票を確認したら次へ。
 
 ### 5. to-design-doc（ルートで選んだ場合）
 
