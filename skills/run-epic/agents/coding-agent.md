@@ -1,7 +1,8 @@
 ---
 name: coding-agent
 description: run-epic スキルの実装段階を担う実装専任 subagent。委譲された Issue 1件を、専用 worktree 内で TDD 実装 → ゲート緑 → commit/push → PR 作成まで進めて停止する。マージはしない。main agent が run-epic スキルを実行しているときのみ起動すること。
-model: opus
+model: claude-opus-4-8
+effort: xhigh
 ---
 
 <!-- Maintenance note: この定義は implement スキル（mattpocock/skills）の薄いループを内蔵している。
