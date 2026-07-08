@@ -22,10 +22,10 @@ skills/
 │   ├── SKILL.md
 │   └── agents/
 │       └── grilling-agent.md  ← 同上
-├── run-epic/
+├── build-feature/
 │   ├── SKILL.md
 │   └── agents/
-│       └── coding-agent.md    ← 同上（model: opus の実装委譲先）
+│       └── coding-agent.md    ← 同上（Opus の実装委譲先）
 └── to-design-doc/
     ├── SKILL.md
     └── DESIGN-DOC-FORMAT.md   ← 補助ファイル（書式定義）の例
@@ -72,7 +72,7 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 |---|---|---|
 | `ship` | **このリポジトリ** (`skills/ship/`) | `~/.claude/skills/ship` はここへの symlink。編集は即反映 |
 | `grill-yourself-with-docs` | **このリポジトリ** (`skills/grill-yourself-with-docs/`) | 同上 |
-| `run-epic` | **このリポジトリ** (`skills/run-epic/`) | 同上。旧版（メインセッション自身が実装する実ディレクトリ）は 2026-07 に委譲版へ刷新した際 symlink に置換済み |
+| `build-feature` | **このリポジトリ** (`skills/build-feature/`) | 同上。2026-07 に `run-epic` から改名（旧版=メインセッション自身が実装する実ディレクトリは、委譲版へ刷新した際 symlink に置換済み） |
 | `to-design-doc` | **このリポジトリ** (`skills/to-design-doc/`) | 同上 |
 | `design-feature` | **このリポジトリ** (`skills/design-feature/`) | 同上 |
 | `caveman` / `diagnose` / `tdd` など一群 | **mattpocock/skills（上流・GitHub）** | `npx skills@latest add mattpocock/skills` でインストールした実ディレクトリ。更新も同コマンドの再実行で行う。ここで手編集しない |
