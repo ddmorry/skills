@@ -117,3 +117,25 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 
 - **CODEX**（`~/.codex/` に独自の `skills/` を持つ別システム）へのスキル同期は、現時点では本リポジトリの管理対象外（`skill-sync` スキルで扱うが、運用整理は別途）。
 - 新しい**オリジナル**スキルを増やすときは、必ずこのリポジトリに置いて symlink する（前節の手順）。サードパーティ製スキルをこのリポジトリに取り込まない（正本が二重化するため）。
+
+## 上流 mattpocock/skills への依存追随（ドリフト検知）
+
+一部の自作スキルは `mattpocock/skills`（`npx skills@latest add mattpocock/skills` で入る上流。**Claude Code のプラグイン自動更新の対象外**）に依存する。依存は2種類で、追随の手当てが要るのは前者だけ:
+
+- **vendored（内容をコピー内蔵）= 上流変化のたびに手で port が要るハード依存。**
+  - `grill-with-docs` → `skills/grill-yourself-with-docs/agents/grilling-agent.md`（方法論を全文内蔵）
+  - `implement` → `skills/build-feature/agents/coding-agent.md`（薄いループを内蔵）
+- **referenced（実行時に名前で Skill 呼び出し）= 内容変化は自己修復するソフト依存。** `tdd` / `code-review` / `grilling` / `domain-modeling` / `to-prd`・`to-issues`（design-feature）等。ただし**上流のリネーム/削除は参照を壊す**ので存在だけ監視する。
+
+### 仕組み
+
+- **pin は `vendor-deps.json`（リポジトリ直下）。** vendored は上流の**サブツリーハッシュ**（`git rev-parse <commit>:<path>`）を pin する。これは skills CLI が `~/.agents/.skill-lock.json` に書く `skillFolderHash` と**同一値**なので、上流 git・ローカル lock のどちらとも直接比較できる。referenced は存在監視のみ（ハッシュ不要）。
+- **検知は `scripts/check-vendored-skills.sh`（ローカル/CI 共通）。** 上流を clone し、vendored のサブツリーハッシュ差分（＋ pin→現在の diff）と referenced の消滅を Markdown で報告する（exit 3=ドリフト / 0=一致）。
+- **定期検知は `.github/workflows/check-vendored-skills.yml`（毎週月曜）。** ドリフトを検知すると `upstream-drift` ラベルの Issue を起票／更新し、一致に戻ると自動クローズする。手動実行は Actions の workflow_dispatch。
+
+### 上流が更新されたときの手順
+
+1. CI が起票した Issue（または手元で `bash scripts/check-vendored-skills.sh`）で差分を確認。
+2. vendored: diff を該当ファイルへ手で port。referenced: リネームなら参照側スキルを新名に直し、`vendor-deps.json` の該当パスも更新（例: `to-prd`→`to-spec`, `to-issues`→`to-tickets`）。
+3. `bash scripts/check-vendored-skills.sh --bump` で vendored の pin を上流 HEAD に更新。
+4. 会社共有分（`grill-yourself-with-docs` / `build-feature` など）は `publish-company-skills` スキルでミラーへ反映（PR フロー）。会社メンバー側は、内蔵コピー分はプラグイン更新／`git pull` で届き、**referenced の上流スキル本体は各自が `npx skills@latest add mattpocock/skills` を再実行**して追随する（冪等・README に記載）。
