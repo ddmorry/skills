@@ -18,6 +18,8 @@
 #   - マニフェストから外れたスキルは DEST 側から prune（削除）される。
 #   - スキル本体に加え、build-feature / design-feature が「スキル開発リポジトリの
 #     CONTEXT.md・docs/adr/ を正とする」と参照するため、CONTEXT.md と docs/adr/ も同梱する。
+#   - DEST を Claude Code のプラグイン marketplace として配布するため、.claude-plugin/
+#     （marketplace.json + plugin.json）も同梱する。正本側で編集し、ここで運ぶ。
 set -euo pipefail
 
 # --- パス解決 -----------------------------------------------------------------
@@ -95,6 +97,36 @@ if [ -d "$SRC/docs/adr" ]; then
   rsync "${RSYNC_DIR[@]}" "$SRC/docs/adr/" "$DEST/docs/adr/"
 fi
 
+# プラグイン marketplace 設定: .claude-plugin/（marketplace.json + plugin.json）
+if [ -d "$SRC/.claude-plugin" ]; then
+  mkdir -p "$DEST/.claude-plugin"
+  echo "sync: .claude-plugin/"
+  rsync "${RSYNC_DIR[@]}" "$SRC/.claude-plugin/" "$DEST/.claude-plugin/"
+fi
+
+# プラグイン用に subagent を top-level agents/ へ集約する。
+# marketplace-root プラグイン（source: "./"）は skills/<name>/agents/ 配下を agent として
+# 読み込まない（Agents:0 になる）。プラグイン install 経路では、既定スキャン先である
+# リポジトリ直下の agents/ に置く必要がある。symlink install 経路（README 方法 B）は
+# 従来どおり skills/<name>/agents/*.md を直接 symlink するので、ネストされた元ファイルも残す。
+# stale 排除のため毎回作り直す。
+shopt -s nullglob
+AGENT_FILES=()
+for s in "${SKILLS[@]}"; do
+  for a in "$SRC/skills/$s/agents/"*.md; do AGENT_FILES+=("$a"); done
+done
+shopt -u nullglob
+if [ "$DRY_RUN" = 1 ]; then
+  [ "${#AGENT_FILES[@]}" -gt 0 ] && echo "[dry-run] would rebuild top-level agents/ from ${#AGENT_FILES[@]} subagent file(s)"
+else
+  rm -rf "$DEST/agents"
+  if [ "${#AGENT_FILES[@]}" -gt 0 ]; then
+    mkdir -p "$DEST/agents"
+    echo "sync: agents/ (${#AGENT_FILES[@]} subagent を集約)"
+    rsync "${RSYNC_FILE[@]}" "${AGENT_FILES[@]}" "$DEST/agents/"
+  fi
+fi
+
 # --- prune: マニフェストに無いスキルを DEST から除去 --------------------------
 if [ -d "$DEST/skills" ]; then
   for d in "$DEST/skills"/*/; do
@@ -133,7 +165,40 @@ if [ "$DRY_RUN" = 0 ]; then
     echo
     echo "## インストール"
     echo
-    echo "各自の環境で、スキル本体と（同梱の）sub-agent 定義をそれぞれ symlink します。"
+    echo "### 方法 A: Claude Code プラグインとして入れる（推奨）"
+    echo
+    echo "このリポジトリは Claude Code のプラグイン marketplace です。"
+    echo "marketplace を登録し、プラグインを install するだけで 5 スキルと同梱 subagent が一括で入ります。"
+    echo
+    echo '```sh'
+    echo '# marketplace を登録（GitHub owner/repo 形式）'
+    echo '/plugin marketplace add soramichi-dev/soramichi-skills'
+    echo '# プラグインを install'
+    echo '/plugin install soramichi-skills@soramichi-skills'
+    echo '```'
+    echo
+    echo "install 後、スキルはプラグイン名で名前空間化される（例: \`/soramichi-skills:build-feature\`）。"
+    echo "モデルによる自動発動は description に従って従来どおり効く。更新は \`/plugin marketplace update\` で取得する。"
+    echo
+    echo "チーム全体へ自動で配布したい場合は、対象リポジトリの \`.claude/settings.json\` に次を置く:"
+    echo
+    echo '```json'
+    echo '{'
+    echo '  "extraKnownMarketplaces": {'
+    echo '    "soramichi-skills": {'
+    echo '      "source": { "source": "github", "repo": "soramichi-dev/soramichi-skills" }'
+    echo '    }'
+    echo '  },'
+    echo '  "enabledPlugins": {'
+    echo '    "soramichi-skills@soramichi-skills": true'
+    echo '  }'
+    echo '}'
+    echo '```'
+    echo
+    echo "### 方法 B: symlink で入れる"
+    echo
+    echo "プラグインの名前空間を避けて短いスキル名（\`/build-feature\` など）で使いたい場合は、"
+    echo "スキル本体と（同梱の）sub-agent 定義をそれぞれ symlink する。"
     echo "\`<CLAUDE_CONFIG_DIR>\` は個人グローバルなら \`~/.claude\`、リポジトリ分離環境なら各リポの config dir。"
     echo
     echo '```sh'
