@@ -1,10 +1,10 @@
 ---
-name: run-epic
-description: Epic 配下（または指定した Issue 群）の AFK Issue を依存順に連続実装する無人ロングランのオーケストレータ。実装はメインセッションでは行わず、Issue 1件ごとに Coding Agent（Opus subagent・worktree 分離）へ委譲し、メインセッションは委譲・質疑の裁定・受け入れ（PR diff と設計成果物の突合）・squash マージに徹する。HITL Issue は人間キューに積んで AFK レーンは続行する。ユーザーが「Epic を回して」「連続実装して」「Issue を次々マージして」「AFK で全部やって」「Epic #N を実装して」「この Issue 群を委譲して」「ロングランで走らせて」など、Issue 群を無人で進める指示をしたとき必ずこのスキルを使う。
+name: build-feature
+description: 機能（Feature）の実装バックログ — Epic 配下または指定した Issue 群 — の AFK Issue を依存順に連続実装する無人ロングランのオーケストレータ（旧名: run-epic）。design-feature（設計段階の HITL コンダクター）の対。実装はメインセッションでは行わず、Issue 1件ごとに Coding Agent（Opus subagent・worktree 分離）へ委譲し、メインセッションは委譲・質疑の裁定・受け入れ（PR diff と設計成果物の突合）・squash マージに徹する。HITL Issue は人間キューに積んで AFK レーンは続行する。ユーザーが「機能を実装して/組み上げて」「Epic を回して」「連続実装して」「Issue を次々マージして」「AFK で全部やって」「Epic #N を実装して」「この Issue 群を委譲して」「ロングランで走らせて」など、Issue 群を無人で進める指示をしたとき必ずこのスキルを使う。
 argument-hint: "Epic の Issue 番号 or URL、または Issue 番号列（例: #250 / #12 #13 #15）"
 ---
 
-# Run Epic — Issue 群を Coding Agent に委譲して連続実装する
+# Build Feature — 機能の Issue 群を Coding Agent に委譲して組み上げる
 
 Epic（または指定 Issue 群）の AFK Issue を依存順に、人の介在なしにマージまで運ぶ。`issue-dep-graph` と同梱の `coding-agent`（[agents/coding-agent.md](./agents/coding-agent.md)）を**合成するオーケストレータ**であり、メインセッション自身はコードを書かない。役割は3つ: **委譲**・**質疑の裁定**・**受け入れとマージ**。
 
