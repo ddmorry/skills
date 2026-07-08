@@ -55,14 +55,35 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 
 （`~/.claude/skills/` には、このリポジトリ管理外の実ディレクトリのスキルや `../../.agents/skills/` 配下への別ソースのリンクも混在する。このリポジトリが管理するのは上記2種のシンボリックリンクだけ。）
 
+### 消費者リポジトリと `CLAUDE_CONFIG_DIR` の分離（見落としやすい前提）
+
+`~/.claude/` に貼っただけでは**全ての起動で読まれるとは限らない**。一部の消費者リポジトリは `.envrc`（direnv）で `CLAUDE_CONFIG_DIR` を**リポジトリ内の別ディレクトリに切り替え**ており、その配下で Claude Code を起動すると `~/.claude/` ではなくそちらが設定ディレクトリになる（アカウント／認証情報を個人用と分離するため）。
+
+| 消費者リポジトリ | `CLAUDE_CONFIG_DIR`（direnv で設定） | スキルの実体 |
+|---|---|---|
+| `code/graphiq/`（＋配下の `slideman-v2/` 等サブディレクトリ） | `code/graphiq/.claude-config` | `code/graphiq/.claude-config/skills/` |
+| `code/soramichi/` | `code/soramichi/.claude-config` | `code/soramichi/.claude-config/skills/` |
+
+- サブディレクトリ（例: `slideman-v2/`）は自前の `.envrc` を持たなくても、direnv が**親の `.envrc` を継承**するため親リポジトリの config を使う。
+- したがってこのリポジトリのスキルを消費者で使うには、`~/.claude/skills/` に加えて**各消費者の `.claude-config/skills/` にも symlink を貼る**必要がある（前節の手順4）。ここが漏れると「個人グローバルでは動くのに消費者リポジトリでは発動しない」という不一致が起きる。
+- agent 定義は例外で、各消費者の `.claude-config/agents` が `~/.claude/agents` への symlink になっているため**個人グローバル1箇所に貼れば全消費者に効く**。追随が要るのは skills だけ。
+
 ### 新しいスキルを追加するときの手順
 
 1. `skills/<skill-name>/SKILL.md`（agent 同梱なら `skills/<skill-name>/agents/*.md` も）を作る。
-2. スキル本体をリンク: `ln -s /Users/daisukemori/code/skills/skills/<skill-name> ~/.claude/skills/<skill-name>`
+2. スキル本体を個人グローバルにリンク: `ln -s /Users/daisukemori/code/skills/skills/<skill-name> ~/.claude/skills/<skill-name>`
 3. agent 定義があれば各ファイルもリンク: `ln -s /Users/daisukemori/code/skills/skills/<skill-name>/agents/<agent>.md ~/.claude/agents/<agent>.md`
-4. 新しい Claude Code セッションで発動条件に合う指示を出し、発動と動作を確認する（このリポジトリに置いただけでは発動しない）。
+4. **消費者リポジトリにも追随リンクを貼る（忘れやすい・重要）**: 次節のとおり graphiq / soramichi は `CLAUDE_CONFIG_DIR` を分離しており `~/.claude/skills/` を参照しない。各消費者の `.claude-config/skills/` にも同じ symlink を貼る:
+   ```sh
+   for c in /Users/daisukemori/code/graphiq/.claude-config/skills \
+            /Users/daisukemori/code/soramichi/.claude-config/skills; do
+     ln -s /Users/daisukemori/code/skills/skills/<skill-name> "$c/<skill-name>"
+   done
+   ```
+   agent 定義は追随不要（各消費者の `.claude-config/agents` は `~/.claude/agents` への symlink で共有される。**skills だけが消費者ごとに個別ディレクトリ**）。
+5. 新しい Claude Code セッションで発動条件に合う指示を出し、発動と動作を確認する（このリポジトリに置いただけでは発動しない）。**確認は必ず消費者リポジトリ配下でも行う**（例: `code/graphiq/slideman-v2/` は `.envrc` を持たないが親 graphiq の direnv を継承するため graphiq の config を使う）。
 
-**コピーは作らないこと。** リンクさえ貼れば以降の編集はリポジトリ側だけで反映される。コピーを作るとどちらが最新か分からなくなる。既存スキルを直したときも、リンクが正しく張られていれば追加の同期作業は不要。
+**コピーは作らないこと。** リンクさえ貼れば以降の編集はリポジトリ側だけで反映される。コピーを作るとどちらが最新か分からなくなる。既存スキルを直したときも、リンクが正しく張られていれば追加の同期作業は不要。スキルを**改名**したときは、旧名のリンクが個人グローバルと全消費者に残らないよう掃除する（改名忘れの残骸リンクは「あるのに動かない別物」を生む）。
 
 ## スキルの出所と管理範囲（正本の所在）
 
