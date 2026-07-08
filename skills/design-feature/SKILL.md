@@ -13,12 +13,12 @@ build-feature（実装段階の AFK オーケストレータ）の対になる H
 ## 大原則
 
 - **flag 付きスキルは代行しない**: `setup-matt-pocock-skills` / `to-prd` / `to-issues` は `disable-model-invocation: true` で Skill ツールから呼べない（ユーザー専用）。案内して待ち、ユーザーがスラッシュコマンドを打つ → 同一セッションなので文脈を引き継いで走る → 完了を成果物で確認したら進行を再開する。中身を Read して代行することも、方法論を複製することもしない（ADR-0004）。
-- **モデル発動可能なスキルは直接呼ぶ**: `grilling` / `domain-modeling` / `grill-yourself-with-docs` / `to-design-doc` / `ship` は Skill ツールで呼ぶ。
+- **モデル発動可能なスキルは直接呼ぶ**: `grilling` / `domain-modeling` / `grill-yourself-with-docs` / `to-design-doc` / `ship` は Skill ツールで呼ぶ（`grilling`・`domain-modeling` は matt pocock スキル＝別途セットアップ。未導入時のフォールバックは工程1参照）。
 - **コンダクターが増やす質問はルート確定の1問だけ**。人間チェックポイントは各スキル固有のもの（grill の対話・to-prd のシーム確認・to-issues のスライス承認・to-design-doc のドラフト承認）に委ね、二重に確認しない。工程の境目は「✅ PRD 起票済み。次は `/to-issues` を打ってください」式の短い進行案内に徹する。
 
 ## 起動時
 
-1. **前提検査**: 対象リポジトリに `docs/agents/issue-tracker.md`（setup-matt-pocock-skills の出力）が無ければ、「先に `/setup-matt-pocock-skills` を打ってください」と案内して待つ。完了を確認したら続行。
+1. **前提検査**: 対象リポジトリに `docs/agents/issue-tracker.md`（setup-matt-pocock-skills の出力）が無ければ、「先に `/setup-matt-pocock-skills` を打ってください」と案内して待つ（`setup-matt-pocock-skills` 自体が未導入なら、README「依存スキル」の `npx skills@latest add mattpocock/skills` で入れてから）。完了を確認したら続行。
 2. **現在地の検出**: ステートファイルは持たない。成果物そのものから現在地を推定する:
    - 会話（または引数の参照先）に grill 相当の要件整理があるか
    - トラッカーに PRD Issue があるか
@@ -31,7 +31,7 @@ build-feature（実装段階の AFK オーケストレータ）の対になる H
 
 ### 1. grill（要件整理）
 
-- **対話 grill**: `grilling` スキルを `domain-modeling` 併用で運転（= grill-with-docs 相当。対象リポジトリの CONTEXT.md・ADR も書きながら進める）。
+- **対話 grill**: `grilling` スキルを `domain-modeling` 併用で運転（= grill-with-docs 相当。対象リポジトリの CONTEXT.md・ADR も書きながら進める）。**`grilling` / `domain-modeling` が未導入なら**、self-grill（`grill-yourself-with-docs`・方法論を内蔵し外部依存なし）に切り替えるか、対話しながら要点を直接 CONTEXT.md・ADR に書く簡易 grill で代替する（導入は README「依存スキル」の `npx skills@latest add mattpocock/skills`）。
 - **self-grill**: `grill-yourself-with-docs` スキルを呼ぶ（可逆性3層の人間確認は同スキルの流儀どおり）。
 
 ### 2. ルート確定（コンダクター唯一の質問）
