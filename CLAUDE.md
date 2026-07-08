@@ -125,7 +125,7 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 - **vendored（内容をコピー内蔵）= 上流変化のたびに手で port が要るハード依存。**
   - `grill-with-docs` → `skills/grill-yourself-with-docs/agents/grilling-agent.md`（方法論を全文内蔵）
   - `implement` → `skills/build-feature/agents/coding-agent.md`（薄いループを内蔵）
-- **referenced（実行時に名前で Skill 呼び出し）= 内容変化は自己修復するソフト依存。** `tdd` / `code-review` / `grilling` / `domain-modeling` / `to-prd`・`to-issues`（design-feature）等。ただし**上流のリネーム/削除は参照を壊す**ので存在だけ監視する。
+- **referenced（実行時に名前で Skill 呼び出し）= 内容変化は自己修復するソフト依存。** `tdd` / `code-review` / `grilling` / `domain-modeling` / `to-spec`・`to-tickets`（design-feature）等。ただし**上流のリネーム/削除は参照を壊す**ので存在だけ監視する（例: 2026-07 に上流が `to-prd`→`to-spec`, `to-issues`→`to-tickets` に改名 → design-feature の参照を追随）。
 
 ### 仕組み
 

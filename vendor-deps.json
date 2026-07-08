@@ -18,17 +18,59 @@
       "upstreamPath": "skills/engineering/implement",
       "localFile": "skills/build-feature/agents/coding-agent.md",
       "note": "coding-agent が implement の薄いループを内蔵（tdd / code-review は実行時に Skill 呼び出し）",
-      "pinnedTreeHash": "f14d5f71ea0d89ee2b503ac1dd3bbf284d322739",
-      "pinnedCommit": "14c13c5bf9ec1bee9926c0c1f388534f0b9ab8e8"
+      "pinnedTreeHash": "aa65990650368f020166bc28d6c05b5b34592c97",
+      "pinnedCommit": "386d4ff719a7c420ad1454232d0436b01f1b8c17"
     }
   ],
   "referenced": [
-    { "name": "tdd",                      "upstreamPath": "skills/engineering/tdd",                      "usedBy": ["build-feature/coding-agent"] },
-    { "name": "code-review",              "upstreamPath": "skills/engineering/code-review",              "usedBy": ["build-feature/coding-agent"] },
-    { "name": "grilling",                 "upstreamPath": "skills/productivity/grilling",                "usedBy": ["design-feature"] },
-    { "name": "domain-modeling",          "upstreamPath": "skills/engineering/domain-modeling",          "usedBy": ["design-feature"] },
-    { "name": "to-prd",                   "upstreamPath": "skills/engineering/to-prd",                   "usedBy": ["design-feature"] },
-    { "name": "to-issues",                "upstreamPath": "skills/engineering/to-issues",                "usedBy": ["design-feature"] },
-    { "name": "setup-matt-pocock-skills", "upstreamPath": "skills/engineering/setup-matt-pocock-skills", "usedBy": ["design-feature"] }
+    {
+      "name": "tdd",
+      "upstreamPath": "skills/engineering/tdd",
+      "usedBy": [
+        "build-feature/coding-agent"
+      ]
+    },
+    {
+      "name": "code-review",
+      "upstreamPath": "skills/engineering/code-review",
+      "usedBy": [
+        "build-feature/coding-agent"
+      ]
+    },
+    {
+      "name": "grilling",
+      "upstreamPath": "skills/productivity/grilling",
+      "usedBy": [
+        "design-feature"
+      ]
+    },
+    {
+      "name": "domain-modeling",
+      "upstreamPath": "skills/engineering/domain-modeling",
+      "usedBy": [
+        "design-feature"
+      ]
+    },
+    {
+      "name": "to-spec",
+      "upstreamPath": "skills/engineering/to-spec",
+      "usedBy": [
+        "design-feature"
+      ]
+    },
+    {
+      "name": "to-tickets",
+      "upstreamPath": "skills/engineering/to-tickets",
+      "usedBy": [
+        "design-feature"
+      ]
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "upstreamPath": "skills/engineering/setup-matt-pocock-skills",
+      "usedBy": [
+        "design-feature"
+      ]
+    }
   ]
 }

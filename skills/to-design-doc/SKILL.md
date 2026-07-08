@@ -1,6 +1,6 @@
 ---
 name: to-design-doc
-description: 機能（Epic 相当）単位の Design Doc を1本合成し、対象リポジトリの docs/design/ に置いて各 Issue 本文から参照させる。to-issues で Issue 分解が終わった後に使う。インタビューはせず、会話・PRD・Issue・コード探索から合成する（to-prd と同じ思想）。ユーザーが「design doc を作って」「デザインドックを書いて」「詳細設計を書いて/固めて」「Issue に設計を紐づけて」と言ったとき、または build-feature（旧 run-epic）への委譲前に下位モデルへ渡す詳細設計を用意したいときに使う。
+description: 機能（Epic 相当）単位の Design Doc を1本合成し、対象リポジトリの docs/design/ に置いて各 Issue 本文から参照させる。to-tickets で Issue 分解が終わった後に使う。インタビューはせず、会話・PRD・Issue・コード探索から合成する（to-spec と同じ思想）。ユーザーが「design doc を作って」「デザインドックを書いて」「詳細設計を書いて/固めて」「Issue に設計を紐づけて」と言ったとき、または build-feature（旧 run-epic）への委譲前に下位モデルへ渡す詳細設計を用意したいときに使う。
 argument-hint: "対象の Epic 番号 or Issue 番号列（省略時は会話中の機能）"
 ---
 
@@ -12,7 +12,7 @@ argument-hint: "対象の Epic 番号 or Issue 番号列（省略時は会話中
 
 ## 前提
 
-- Issue 分解が済んでいて Issue 番号が実在すること（slice 別セクションを実番号に対応付けるため）。未分解なら先に `to-issues`。
+- Issue 分解が済んでいて Issue 番号が実在すること（slice 別セクションを実番号に対応付けるため）。未分解なら先に `to-tickets`。
 - 会話に grill / PRD の文脈があること。無ければ Issue トラッカーから PRD・Epic を読む。
 
 ## Process

@@ -19,3 +19,7 @@ date: 2026-07-08
 - 上流が flag を外せば、該当工程を Skill 呼び出しに置き換えるだけでよい（コンダクターの形は変わらない）。
 - 人間チェックポイントは各スキル固有のものに委ね、コンダクターが追加する質問はルート確定（to-prd / to-design-doc の要否）の1問だけ。
 - 状態はステートファイルではなく成果物（PRD Issue・スライス Issue・docs/design/）から検出するため、セッションをまたいだ再開が自然に成立する。
+
+## Update (2026-07-09)
+
+上流 mattpocock/skills が planning スキルを改名した: `to-prd` → `to-spec`（"spec"＝従来 PRD と呼んでいた文書。意味は不変）、`to-issues` → `to-tickets`（tracer-bullet スライスと blocking edges を明示する書き換えだが、成果物は依然 issue tracker の Issue で役割は同じ）。この ADR の判断（コンダクターは薄い進行役／flag 付きは user-invoked）は不変で、`design-feature` と `to-design-doc` の参照コマンド名だけを新名に追随させた（本文の旧名は当時の記録として残す）。ドリフトは `vendor-deps.json` ＋ `check-vendored-skills` で検知する（CLAUDE.md「上流 mattpocock/skills への依存追随」）。
