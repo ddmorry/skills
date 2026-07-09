@@ -10,6 +10,7 @@
 
 afk-build-feature
 afk-ship
+build-feature
 design-feature
 grill-yourself-with-docs
 to-design-doc

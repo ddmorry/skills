@@ -1,6 +1,6 @@
 ---
 name: afk-build-feature
-description: 機能（Feature）の実装バックログ — Epic 配下または指定した Issue 群 — の AFK Issue を依存順に連続実装し、承認を挟まず PR マージまで進める無人ロングランのオーケストレータ（旧名: build-feature / run-epic）。無人で複数 Issue をマージまで運ぶためリスクが高く、社内アプリケーション開発などで運用を限定する前提のスキル。design-feature（設計段階の HITL コンダクター）の対。実装はメインセッションでは行わず、Issue 1件ごとに Coding Agent（Opus subagent・worktree 分離）へ委譲し、メインセッションは委譲・質疑の裁定・受け入れ（PR diff と設計成果物の突合）・squash マージに徹する。HITL Issue は人間キューに積んで AFK レーンは続行する。ユーザーが「機能を実装して/組み上げて」「Epic を回して」「連続実装して」「Issue を次々マージして」「AFK で全部やって」「Epic #N を実装して」「この Issue 群を委譲して」「ロングランで走らせて」など、Issue 群を無人で進める指示をしたとき必ずこのスキルを使う。
+description: 機能（Feature）の実装バックログ — Epic 配下または指定した Issue 群 — の AFK Issue を依存順に連続実装し、承認を挟まず PR マージ（main へ squash）まで進める無人ロングランのオーケストレータ（旧名: run-epic。現在の build-feature は単一 Issue・PR 停止・人間マージの別スキル）。無人で複数 Issue をマージまで運ぶためリスクが高く、社内アプリケーション開発などで運用を限定する前提のスキル。design-feature（設計段階の HITL コンダクター）の対。実装はメインセッションでは行わず、Issue 1件ごとに Coding Agent（Opus subagent・worktree 分離）へ委譲し、メインセッションは委譲・質疑の裁定・受け入れ（PR diff と設計成果物の突合）・squash マージに徹する。HITL Issue は人間キューに積んで AFK レーンは続行する。ユーザーが「AFK で全部やって」「Epic を回して」「Epic #N を実装して」「連続実装して」「Issue を次々マージして」「この Issue 群を委譲して」「ロングランで走らせて」など、複数 Issue を無人でマージまで進めると明示したときだけこのスキルを使う。単一 Issue を open PR まで作って人間がマージする通常の機能開発（「この Issue を実装して」「機能を実装して/作って」「PR を出して」）は既定の build-feature を使い、このスキルは使わない。
 argument-hint: "Epic の Issue 番号 or URL、または Issue 番号列（例: #250 / #12 #13 #15）"
 ---
 
