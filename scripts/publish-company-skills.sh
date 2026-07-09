@@ -191,92 +191,39 @@ if [ "$DRY_RUN" = 0 ]; then
   printf '%s\n' '.DS_Store' '.orca' 'node_modules' > "$DEST/.gitignore"
 fi
 
-# --- README 生成（teammate 向け・毎回上書き） --------------------------------
+# --- README 生成: テンプレ README.dist.md に「含まれるスキル」一覧を注入して DEST へ ----
+# 正本 code/skills の README.dist.md を手編集ソースとし、その <!-- SKILLS --> の位置へ
+# マニフェスト順のスキル一覧（各 SKILL.md の description 冒頭）を注入して DEST/README.md を生成する。
+# 配布 README の文言・セクションはこのテンプレを直接編集して調整する（echo のハードコードは廃止）。
+# テンプレ自体はミラーへ同期しない（DEST に置かれず KEEP_TOP にも無い）。
+# 詳細は CLAUDE.md「会社共有リポジトリ（soramichi-skills）へのミラー配布」。
 if [ "$DRY_RUN" = 0 ]; then
-  {
-    echo "# soramichi-skills"
-    echo
-    echo "SORAMICHI 社内で共有する Claude Code スキル集。"
-    echo
-    echo "> **このリポジトリは自動生成ミラーです。** 正本は個人リポジトリ側で管理され、"
-    echo "> \`publish-company-skills\` により一方向で同期されます。**ここを直接編集しないでください**"
-    echo "> （次回同期で上書きされます）。修正は正本リポジトリに入れてから再同期します。"
-    echo
-    echo "## 含まれるスキル"
-    echo
-    for s in "${SKILLS[@]}"; do
-      desc="$(awk '/^description:/{sub(/^description:[[:space:]]*/,"");print;exit}' "$DEST/skills/$s/SKILL.md" 2>/dev/null | cut -c1-100)"
-      echo "- \`$s\` — ${desc:-（説明なし）}…"
-    done
-    echo
-    echo "## インストール"
-    echo
-    echo "### 方法 A: Claude Code プラグインとして入れる（推奨）"
-    echo
-    echo "このリポジトリは Claude Code のプラグイン marketplace です。"
-    echo "marketplace を登録し、プラグインを install するだけで ${#SKILLS[@]} スキルと同梱 subagent が一括で入ります。"
-    echo
-    echo '```sh'
-    echo '# marketplace を登録（GitHub owner/repo 形式）'
-    echo '/plugin marketplace add soramichi-dev/soramichi-skills'
-    echo '# プラグインを install'
-    echo '/plugin install soramichi-skills@soramichi-skills'
-    echo '```'
-    echo
-    echo "install 後、スキルはプラグイン名で名前空間化される（例: \`/soramichi-skills:afk-build-feature\`）。"
-    echo "モデルによる自動発動は description に従って従来どおり効く。更新は \`/plugin marketplace update\` で取得する。"
-    echo
-    echo "チーム全体へ自動で配布したい場合は、対象リポジトリの \`.claude/settings.json\` に次を置く:"
-    echo
-    echo '```json'
-    echo '{'
-    echo '  "extraKnownMarketplaces": {'
-    echo '    "soramichi-skills": {'
-    echo '      "source": { "source": "github", "repo": "soramichi-dev/soramichi-skills" }'
-    echo '    }'
-    echo '  },'
-    echo '  "enabledPlugins": {'
-    echo '    "soramichi-skills@soramichi-skills": true'
-    echo '  }'
-    echo '}'
-    echo '```'
-    echo
-    echo "### 方法 B: symlink で入れる"
-    echo
-    echo "プラグインの名前空間を避けて短いスキル名（\`/afk-build-feature\` など）で使いたい場合は、"
-    echo "スキル本体と（同梱の）sub-agent 定義をそれぞれ symlink する。"
-    echo "\`<CLAUDE_CONFIG_DIR>\` は個人グローバルなら \`~/.claude\`、リポジトリ分離環境なら各リポの config dir。"
-    echo
-    echo '```sh'
-    echo 'REPO="$(pwd)"   # このリポジトリを clone した場所'
-    echo 'CFG="$HOME/.claude"   # 必要に応じて各リポの CLAUDE_CONFIG_DIR に変える'
-    echo '# スキル本体（ディレクトリごと symlink）'
-    echo 'for s in "$REPO"/skills/*/; do'
-    echo '  ln -sfn "$s" "$CFG/skills/$(basename "$s")"'
-    echo 'done'
-    echo '# sub-agent 定義（agents/ を持つスキルのみ・ファイル単位で symlink）'
-    echo 'for a in "$REPO"/skills/*/agents/*.md; do'
-    echo '  [ -e "$a" ] && ln -sfn "$a" "$CFG/agents/$(basename "$a")"'
-    echo 'done'
-    echo '```'
-    echo
-    echo "## 依存スキル（別途セットアップ推奨）"
-    echo
-    echo "一部のスキルは matt pocock 氏のスキルを Skill として呼び出す（未導入でもフォールバックで動くが、入れると最良）:"
-    echo
-    echo "- \`design-feature\` → \`grilling\` / \`domain-modeling\` / \`setup-matt-pocock-skills\`（issue トラッカー初期化）"
-    echo "- \`afk-build-feature\` の coding-agent → \`tdd\` / \`code-review\`"
-    echo
-    echo "これらは GitHub のプラグインとしては配布されていないため、次で導入する:"
-    echo
-    echo '```sh'
-    echo 'npx skills@latest add mattpocock/skills'
-    echo '```'
-    echo
-    echo "未導入でも各スキルは簡易インライン処理／内蔵版（\`grill-yourself-with-docs\`）にフォールバックする。"
-    echo
-    echo "スキルの用語・設計判断の背景（CONTEXT.md / ADR）は開発元リポジトリで管理している（配布物には含めない）。"
-  } > "$DEST/README.md"
+  TEMPLATE="$SRC/README.dist.md"
+  if [ ! -f "$TEMPLATE" ]; then
+    echo "ERROR: 配布用 README テンプレートがありません: $TEMPLATE" >&2
+    echo "       正本 code/skills に README.dist.md を置くこと（<!-- SKILLS --> プレースホルダを含める）。" >&2
+    exit 1
+  fi
+  grep -q '<!-- SKILLS -->' "$TEMPLATE" \
+    || echo "WARNING: $TEMPLATE に <!-- SKILLS --> プレースホルダが無い。スキル一覧は注入されない" >&2
+  # スキル一覧を生成（各 SKILL.md の description 冒頭100字。切り詰めたときだけ末尾に … を付す）
+  SKILLS_LIST_FILE="$(mktemp)"
+  for s in "${SKILLS[@]}"; do
+    full="$(awk '/^description:/{sub(/^description:[[:space:]]*/,"");print;exit}' "$DEST/skills/$s/SKILL.md" 2>/dev/null)"
+    if [ -z "$full" ]; then
+      echo "- \`$s\` — （説明なし）"
+    else
+      desc="$(printf '%s' "$full" | cut -c1-100)"
+      if [ "$desc" != "$full" ]; then desc="${desc}…"; fi
+      echo "- \`$s\` — $desc"
+    fi
+  done > "$SKILLS_LIST_FILE"
+  # <!-- SKILLS --> の行を生成した一覧で置換して README.md を書き出す（プレースホルダ行自体は出力しない）
+  awk -v lf="$SKILLS_LIST_FILE" '
+    /<!-- SKILLS -->/ { while ((getline line < lf) > 0) print line; close(lf); next }
+    { print }
+  ' "$TEMPLATE" > "$DEST/README.md"
+  rm -f "$SKILLS_LIST_FILE"
 fi
 
 # --- commit -------------------------------------------------------------------
