@@ -12,7 +12,7 @@
 
 marketplace の各プラグイン `source` は、同一リポ（`"./"`）でも外部リポ（`github` / `url` / `git-subdir` / `npm`）でもよい。**カタログの在処とプラグイン実体の在処は独立**で、それぞれ別にピンできる。現在の `marketplace.json`:
 
-- ① `soramichi-skills` → `source: "./"`（このリポジトリ自身）
+- ① `soramichi-dev-plugins` → `source: "./"`（このリポジトリ自身）
 - ② `mattpocock-skills` → `source: { github, repo: mattpocock/skills, sha }`（**外部参照**）
 
 ②により fork も vendor もせず上流プラグインを1エントリで載せ、`design-feature` / `afk-build-feature` が実行時に呼ぶ referenced 依存（`to-spec` / `to-tickets` / `tdd` / `code-review` / `grilling` / `domain-modeling`）を同一スコープに供給している。動機と Claude Tag 文脈は [claude-tag-distribution.md](./claude-tag-distribution.md)。

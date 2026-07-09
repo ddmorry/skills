@@ -1,9 +1,9 @@
-# 会社共有リポジトリ（soramichi-dev/soramichi-skills）へ publish するスキルの一覧。
+# 会社共有リポジトリ（soramichi-dev/soramichi-plugins）へ publish するスキルの一覧。
 #
 # - 1 行 1 スキル。値は skills/ 配下のディレクトリ名。
 # - `#` で始まる行と空行は無視される。
 # - scripts/publish-company-skills.sh（= publish-company-skills スキル）がこの一覧を読み、
-#   ここに列挙されたスキルだけを code/soramichi/skills へミラーする。
+#   ここに列挙されたスキルだけを code/soramichi/plugins へミラーする。
 # - ここに無いスキルは個人専用扱いで会社リポには出さない。
 # - スキルを会社共有にする/やめるときは、この一覧を編集してから publish を実行する。
 #   （一覧から外したスキルは次回 publish 時に会社リポ側からも削除される = prune される）

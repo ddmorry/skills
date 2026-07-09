@@ -2,7 +2,7 @@
 #
 # publish-company-skills.sh
 #
-# code/skills（正本）→ code/soramichi/skills（会社共有ミラー, remote=soramichi-dev/soramichi-skills）
+# code/skills（正本）→ code/soramichi/plugins（会社共有ミラー, remote=soramichi-dev/soramichi-plugins）
 # への一方向ミラー同期。company-skills.txt に列挙されたスキルだけを対象にする。
 #
 # soramichi-dev は main への直接 push を禁止している（repository rule: "Changes must be made
@@ -15,7 +15,7 @@
 #   scripts/publish-company-skills.sh --dry-run  # 差分だけ表示（commit も push もしない）
 #
 # 環境変数:
-#   DEST   ミラー先ディレクトリ（既定: <SRC の親>/soramichi/skills を code/ 基準で解決）
+#   DEST   ミラー先ディレクトリ（既定: <SRC の親>/soramichi/plugins を code/ 基準で解決）
 #
 # 設計方針:
 #   - SRC を唯一の正本とし、DEST は手編集しない純粋な下流ミラー。
@@ -32,16 +32,16 @@
 #   --push はマージまで自動で行う。自分がそのセッションで作成した PR の squash マージは
 #   Claude Code の自動モード分類器が「自己承認・レビューなしマージ」として止めるため、Claude 経由
 #   だとマージ段階で停止することがある。その場合はユーザーが直接シェルで実行するか、表示された
-#   gh コマンドを手で打つ（`gh pr merge <branch> --repo soramichi-dev/soramichi-skills --squash --delete-branch --admin`）。
+#   gh コマンドを手で打つ（`gh pr merge <branch> --repo soramichi-dev/soramichi-plugins --squash --delete-branch --admin`）。
 set -euo pipefail
 
 # --- パス解決 -----------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$(cd "$SCRIPT_DIR/.." && pwd)"                       # = code/skills
-DEST="${DEST:-$(cd "$SRC/.." && pwd)/soramichi/skills}" # 既定: code/soramichi/skills
+DEST="${DEST:-$(cd "$SRC/.." && pwd)/soramichi/plugins}" # 既定: code/soramichi/plugins
 MANIFEST="$SRC/company-skills.txt"
-REMOTE_URL="https://github.com/soramichi-dev/soramichi-skills.git"
-REPO_SLUG="soramichi-dev/soramichi-skills"
+REMOTE_URL="https://github.com/soramichi-dev/soramichi-plugins.git"
+REPO_SLUG="soramichi-dev/soramichi-plugins"
 GIT_USER_NAME="Daisuke"
 GIT_USER_EMAIL="daisuke_mori@sora-michi.com"
 
@@ -196,7 +196,7 @@ fi
 # マニフェスト順のスキル一覧（各 SKILL.md の description 冒頭）を注入して DEST/README.md を生成する。
 # 配布 README の文言・セクションはこのテンプレを直接編集して調整する（echo のハードコードは廃止）。
 # テンプレ自体はミラーへ同期しない（DEST に置かれず KEEP_TOP にも無い）。
-# 詳細は CLAUDE.md「会社共有リポジトリ（soramichi-skills）へのミラー配布」。
+# 詳細は CLAUDE.md「会社共有リポジトリ（soramichi-plugins）へのミラー配布」。
 if [ "$DRY_RUN" = 0 ]; then
   TEMPLATE="$SRC/README.dist.md"
   if [ ! -f "$TEMPLATE" ]; then
