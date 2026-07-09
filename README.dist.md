@@ -33,7 +33,8 @@ install 後、スキルはプラグイン名で名前空間化される（例: `
     }
   },
   "enabledPlugins": {
-    "soramichi-skills@soramichi-skills": true
+    "soramichi-skills@soramichi-skills": true,
+    "mattpocock-skills@soramichi-skills": true
   }
 }
 ```
@@ -64,11 +65,15 @@ done
 - `design-feature` → `grilling` / `domain-modeling` / `setup-matt-pocock-skills`（issue トラッカー初期化）
 - `afk-build-feature` の coding-agent → `tdd` / `code-review`
 
-これらは GitHub のプラグインとしては配布されていないため、次で導入する:
+これらは**同じ marketplace の 2 つ目のプラグイン `mattpocock-skills`** として同梱している。
+`soramichi-skills` を install しても自動では入らない別プラグインなので、明示的に入れる:
 
 ```sh
-npx skills@latest add mattpocock/skills
+/plugin install mattpocock-skills@soramichi-skills
 ```
+
+settings.json で配布する場合は、方法 A の `enabledPlugins` に `"mattpocock-skills@soramichi-skills": true` を併記する。
+プラグインを使わず素の CLI で入れたい場合は `npx skills@latest add mattpocock/skills` でも可。
 
 未導入でも各スキルは簡易インライン処理／内蔵版（`grill-yourself-with-docs`）にフォールバックする。
 
