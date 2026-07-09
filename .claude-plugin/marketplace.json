@@ -18,6 +18,21 @@
       "repository": "https://github.com/soramichi-dev/soramichi-skills",
       "keywords": ["soramichi", "workflow", "design", "implementation", "afk", "hitl", "subagent"],
       "category": "productivity"
+    },
+    {
+      "name": "mattpocock-skills",
+      "source": {
+        "source": "github",
+        "repo": "mattpocock/skills",
+        "ref": "main",
+        "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
+      },
+      "description": "上流 mattpocock/skills プラグイン。design-feature が実行時に呼ぶ to-spec / to-tickets / grilling / domain-modeling と、build-feature の coding-agent が呼ぶ tdd / code-review を含む referenced 依存を供給する。ローカルは各自 npx skills add で入れるが、Claude Tag には各自インストールの経路が無いため、同一 marketplace の外部プラグイン参照として同梱する。sha ピンは vendor-deps.json のドリフト検知と揃えて bump すること（詳細: docs/claude-tag-distribution.md）。",
+      "author": { "name": "Matt Pocock" },
+      "homepage": "https://github.com/mattpocock/skills",
+      "repository": "https://github.com/mattpocock/skills",
+      "keywords": ["upstream", "dependency", "tdd", "code-review", "to-spec", "to-tickets", "grilling", "domain-modeling"],
+      "category": "productivity"
     }
   ]
 }

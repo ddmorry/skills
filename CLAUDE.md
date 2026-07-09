@@ -100,6 +100,16 @@ sub-agent を使うスキルは、agent 定義（`.claude/agents/*.md` 形式: f
 - **反映は soramichi-dev への outward、かつ PR 経由が必須。** `soramichi-dev/soramichi-skills` は main への直接 push を禁止している（repository rule）ため、`--push` は直接 push せず PR フローで反映する。push / PR 作成 / マージは **ddmorry アカウント**で行う（soramichi-dev org を ddmorry が admin として使っており、**別個の soramichi GitHub アカウントは存在しない**）。`code/soramichi/.envrc` の `GH_CONFIG_DIR` 分離は同じ ddmorry の認証情報を graphiq 側と別保存しているだけで、アカウント自体は ddmorry。環境に `GH_TOKEN`（ddmorry）があればそれで通る。commit の author はミラー側 local config で `daisuke_mori@sora-michi.com` に固定（会社リポ表示用のメール分離で、GitHub の pusher は ddmorry になる）。**Claude セッションから `--push` すると、自分が作成した PR の squash マージが自動モード分類器に止められることがある**（その場合は表示される `gh pr merge … --admin` を手動実行）。
 - teammate 側のインストールは、clone 後に `skills/*` を各自の config dir の `skills/` へ、`skills/*/agents/*.md` を `agents/` へ symlink する（手順は生成される README 参照）。
 
+### Claude Tag（Claude in Slack）経由の配布
+
+clone + symlink とは別に、**Claude Tag（Claude in Slack）**からメンバーにプラグインを使わせる経路も固めてある。要点だけ:
+
+- Claude Tag は各自のローカル `~/.claude` を読まず、Anthropic ホストの sandbox（Claude Code on the web と同じエンジン）で動く。**スキル供給の正規経路は「`soramichi-dev/soramichi-skills` を org プラグイン marketplace として admin 登録」**。メンバー側のインストール作業はゼロ。
+- mattpocock 依存（`design-feature` / `build-feature` が実行時に呼ぶ referenced 6本）は Claude Tag に各自インストールの経路が無いため、**`.claude-plugin/marketplace.json` に mattpocock を外部プラグインとして参照追加**して同一 marketplace から供給する（fork も vendor も不要）。この `sha` ピンは `vendor-deps.json` のドリフト検知と揃えて bump する。
+- `ship` / `build-feature` の「main へ squash-merge」までやる挙動は Claude Tag では**「PR 作成で停止・マージは人間」に縮退**させるのが正。→ **Claude Tag 前提で `build-feature` を fork（Issue ごと PR・人間マージ前提）する方針**（未実装）。
+
+全体像・出典・セットアップ手順・PoC 検証項目は [docs/claude-tag-distribution.md](./docs/claude-tag-distribution.md) を正本とする（この文書は開発リポ専用でミラー対象外）。
+
 ## スキルの出所と管理範囲（正本の所在）
 
 `~/.claude/skills/` には複数の出所のスキルが同居している。**このリポジトリが正本（編集すべき本物）なのは以下の6つだけ**。それ以外は別ソースが正本なので、ここでは編集しない（`~/.claude/skills/` 側で直接いじっても上流に反映されず、再インストールで上書きされる）。どのスキルを触るときも「正本はどこか」を最初に確かめる。
