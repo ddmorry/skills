@@ -8,8 +8,8 @@
 # - スキルを会社共有にする/やめるときは、この一覧を編集してから publish を実行する。
 #   （一覧から外したスキルは次回 publish 時に会社リポ側からも削除される = prune される）
 
-build-feature
+afk-build-feature
+afk-ship
 design-feature
 grill-yourself-with-docs
-ship
 to-design-doc

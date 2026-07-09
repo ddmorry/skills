@@ -4,12 +4,12 @@
     "name": "SORAMICHI",
     "email": "daisuke_mori@sora-michi.com"
   },
-  "description": "SORAMICHI 社内で共有する Claude Code スキル集。機能開発の設計→実装パイプライン（build-feature / design-feature / grill-yourself-with-docs / ship / to-design-doc）を配布する。",
+  "description": "SORAMICHI 社内で共有する Claude Code スキル集。機能開発の設計→実装パイプライン（afk-build-feature / afk-ship / design-feature / grill-yourself-with-docs / to-design-doc）を配布する。",
   "plugins": [
     {
       "name": "soramichi-skills",
       "source": "./",
-      "description": "SORAMICHI の設計→実装開発パイプラインを構成する Claude Code スキル 5 本と、それらが委譲する subagent（coding-agent / grilling-agent / ship-executor）を同梱したプラグイン。",
+      "description": "SORAMICHI の設計→実装開発パイプラインを構成する Claude Code スキル 5 本（afk-build-feature / afk-ship を含む）と、それらが委譲する subagent（coding-agent / grilling-agent / ship-executor）を同梱したプラグイン。",
       "author": {
         "name": "SORAMICHI",
         "email": "daisuke_mori@sora-michi.com"
@@ -27,7 +27,7 @@
         "ref": "main",
         "sha": "d574778f94cf620fcc8ce741584093bc650a61d3"
       },
-      "description": "上流 mattpocock/skills プラグイン。design-feature が実行時に呼ぶ to-spec / to-tickets / grilling / domain-modeling と、build-feature の coding-agent が呼ぶ tdd / code-review を含む referenced 依存を供給する。ローカルは各自 npx skills add で入れるが、Claude Tag には各自インストールの経路が無いため、同一 marketplace の外部プラグイン参照として同梱する。sha ピンは vendor-deps.json のドリフト検知と揃えて bump すること（詳細: docs/claude-tag-distribution.md）。",
+      "description": "上流 mattpocock/skills プラグイン。design-feature が実行時に呼ぶ to-spec / to-tickets / grilling / domain-modeling と、afk-build-feature の coding-agent が呼ぶ tdd / code-review を含む referenced 依存を供給する。ローカルは各自 npx skills add で入れるが、Claude Tag には各自インストールの経路が無いため、同一 marketplace の外部プラグイン参照として同梱する。sha ピンは vendor-deps.json のドリフト検知と揃えて bump すること（詳細: docs/claude-tag-distribution.md）。",
       "author": { "name": "Matt Pocock" },
       "homepage": "https://github.com/mattpocock/skills",
       "repository": "https://github.com/mattpocock/skills",

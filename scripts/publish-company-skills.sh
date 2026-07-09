@@ -20,7 +20,7 @@
 # 設計方針:
 #   - SRC を唯一の正本とし、DEST は手編集しない純粋な下流ミラー。
 #   - マニフェストから外れたスキルは DEST 側から prune（削除）される。
-#   - スキル本体に加え、build-feature / design-feature が「スキル開発リポジトリの
+#   - スキル本体に加え、afk-build-feature / design-feature が「スキル開発リポジトリの
 #     CONTEXT.md・docs/adr/ を正とする」と参照するため、CONTEXT.md と docs/adr/ も同梱する。
 #   - DEST を Claude Code のプラグイン marketplace として配布するため、.claude-plugin/
 #     （marketplace.json + plugin.json）も同梱する。正本側で編集し、ここで運ぶ。
@@ -223,7 +223,7 @@ if [ "$DRY_RUN" = 0 ]; then
     echo '/plugin install soramichi-skills@soramichi-skills'
     echo '```'
     echo
-    echo "install 後、スキルはプラグイン名で名前空間化される（例: \`/soramichi-skills:build-feature\`）。"
+    echo "install 後、スキルはプラグイン名で名前空間化される（例: \`/soramichi-skills:afk-build-feature\`）。"
     echo "モデルによる自動発動は description に従って従来どおり効く。更新は \`/plugin marketplace update\` で取得する。"
     echo
     echo "チーム全体へ自動で配布したい場合は、対象リポジトリの \`.claude/settings.json\` に次を置く:"
@@ -243,7 +243,7 @@ if [ "$DRY_RUN" = 0 ]; then
     echo
     echo "### 方法 B: symlink で入れる"
     echo
-    echo "プラグインの名前空間を避けて短いスキル名（\`/build-feature\` など）で使いたい場合は、"
+    echo "プラグインの名前空間を避けて短いスキル名（\`/afk-build-feature\` など）で使いたい場合は、"
     echo "スキル本体と（同梱の）sub-agent 定義をそれぞれ symlink する。"
     echo "\`<CLAUDE_CONFIG_DIR>\` は個人グローバルなら \`~/.claude\`、リポジトリ分離環境なら各リポの config dir。"
     echo
@@ -265,7 +265,7 @@ if [ "$DRY_RUN" = 0 ]; then
     echo "一部のスキルは matt pocock 氏のスキルを Skill として呼び出す（未導入でもフォールバックで動くが、入れると最良）:"
     echo
     echo "- \`design-feature\` → \`grilling\` / \`domain-modeling\` / \`setup-matt-pocock-skills\`（issue トラッカー初期化）"
-    echo "- \`build-feature\` の coding-agent → \`tdd\` / \`code-review\`"
+    echo "- \`afk-build-feature\` の coding-agent → \`tdd\` / \`code-review\`"
     echo
     echo "これらは GitHub のプラグインとしては配布されていないため、次で導入する:"
     echo

@@ -16,7 +16,7 @@
     {
       "name": "implement",
       "upstreamPath": "skills/engineering/implement",
-      "localFile": "skills/build-feature/agents/coding-agent.md",
+      "localFile": "skills/afk-build-feature/agents/coding-agent.md",
       "note": "coding-agent が implement の薄いループを内蔵（tdd / code-review は実行時に Skill 呼び出し）",
       "pinnedTreeHash": "aa65990650368f020166bc28d6c05b5b34592c97",
       "pinnedCommit": "386d4ff719a7c420ad1454232d0436b01f1b8c17"
@@ -27,14 +27,14 @@
       "name": "tdd",
       "upstreamPath": "skills/engineering/tdd",
       "usedBy": [
-        "build-feature/coding-agent"
+        "afk-build-feature/coding-agent"
       ]
     },
     {
       "name": "code-review",
       "upstreamPath": "skills/engineering/code-review",
       "usedBy": [
-        "build-feature/coding-agent"
+        "afk-build-feature/coding-agent"
       ]
     },
     {
