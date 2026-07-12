@@ -1,8 +1,12 @@
 {
-  "_comment": "mattpocock/skills への依存 pin。scripts/check-vendored-skills.sh と .github/workflows/check-vendored-skills.yml が参照する。pinnedTreeHash は git のサブツリーハッシュ（git rev-parse <commit>:<path>）で、skills CLI が ~/.agents/.skill-lock.json に書く skillFolderHash とも一致する。vendored=内容をコピー内蔵しているので上流変化のたびに手で port が要る。referenced=実行時に名前で Skill 呼び出しするだけ（内容変化は自己修復するが、リネーム/削除は参照を壊すので存在だけ監視する）。",
+  "_comment": "mattpocock/skills への依存 pin。scripts/check-vendored-skills.sh と .github/workflows/check-vendored-skills.yml が参照する。pinnedTreeHash は git のサブツリーハッシュ（git rev-parse <commit>:<path>）で、skills CLI が ~/.agents/.skill-lock.json に書く skillFolderHash とも一致する。vendored=内容をコピー内蔵しているので上流変化のたびに手で port が要る。referenced=実行時に名前で Skill 呼び出しするだけ（内容変化は自己修復するが、リネーム/削除は参照を壊すので存在だけ監視する）。照合の基準は upstream.trackRef＝最新リリースタグ（npx skills@latest が入れる版）で、main HEAD ではない。",
   "upstream": {
     "repo": "mattpocock/skills",
-    "url": "https://github.com/mattpocock/skills.git"
+    "url": "https://github.com/mattpocock/skills.git",
+    "trackRef": "latest v* tag",
+    "syncedRelease": "v1.1.0",
+    "syncedReleaseCommit": "d574778f94cf620fcc8ce741584093bc650a61d3",
+    "_syncNote": "2026-07-12 に v1.1.0 と一致を確認（vendored のサブツリーハッシュ一致・referenced 全存在・自作スキルの参照名一致）。.claude-plugin/marketplace.json の mattpocock sha ピンも同コミット。v1.1.0 の破壊的変更 to-prd→to-spec / to-issues→to-tickets / in-progress/review→engineering/code-review は前段で対応済み。"
   },
   "vendored": [
     {
@@ -70,6 +74,15 @@
       "upstreamPath": "skills/engineering/setup-matt-pocock-skills",
       "usedBy": [
         "design-feature"
+      ]
+    },
+    {
+      "name": "research",
+      "upstreamPath": "skills/engineering/research",
+      "note": "v1.1.0 で上流に追加。risk-scan / risk-deep-dive が『腰を据えた一次資料調査』を /research に委譲する（work/research/ に出典付きで残す）。",
+      "usedBy": [
+        "risk-scan",
+        "risk-deep-dive"
       ]
     }
   ]
