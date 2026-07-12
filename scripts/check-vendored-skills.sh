@@ -16,6 +16,12 @@
 #   - referenced: upstreamPath/SKILL.md が上流から消えたら「リネーム/削除で参照が壊れる」。
 #                （内容の変化は実行時呼び出しで自己修復するので、存在だけを監視する。）
 #
+# 照合の基準は「上流の最新リリースタグ（vX.Y.Z）」であって main HEAD ではない。
+# `npx skills@latest add mattpocock/skills` が入れるのは最新リリースなので（インストール
+# 実体の skillFolderHash が v タグのサブツリーハッシュと一致することを確認済み）、release
+# 前の main の変更で誰も入れていない差分を誤検知しないよう、最新 v タグに揃える
+# （v タグが無いリポジトリでは HEAD にフォールバック）。
+#
 # 依存: git, jq
 set -uo pipefail
 
@@ -52,22 +58,30 @@ fi
 trap '[ -n "$CLEANUP" ] && rm -rf "$CLEANUP"' EXIT
 up() { git -C "$UPSTREAM_DIR" "$@"; }
 
-HEAD_SHORT="$(up rev-parse --short HEAD)"
+# --- 照合の基準 ref を決める（HEAD ではなく最新リリースタグ。理由は冒頭コメント参照） ---
+REF="$(up tag -l 'v*' --sort=-v:refname | head -1)"
+if [ -n "$REF" ]; then
+  # 注釈付きタグはタグオブジェクト sha を返すので ^{commit} でコミット sha を表示する
+  REF_LABEL="$REF ($(up rev-parse --short "$REF^{commit}"))"
+else
+  REF="HEAD"
+  REF_LABEL="HEAD (リリースタグ無し)"
+fi
 
-# --- bump モード: vendored の pin を上流 HEAD に更新して終了 ---
+# --- bump モード: vendored の pin を上流の最新リリースタグに更新して終了 ---
 if [ "$BUMP" = 1 ]; then
   tmp="$(mktemp)"; cp "$PIN" "$tmp"
   n="$(jq '.vendored | length' "$PIN")"
   for i in $(seq 0 $((n - 1))); do
     path="$(jq -r ".vendored[$i].upstreamPath" "$PIN")"
-    newtree="$(up rev-parse "HEAD:$path" 2>/dev/null || echo "")"
-    newcommit="$(up log -1 --format=%H -- "$path" 2>/dev/null || echo "")"
+    newtree="$(up rev-parse "$REF:$path" 2>/dev/null || echo "")"
+    newcommit="$(up log -1 --format=%H "$REF" -- "$path" 2>/dev/null || echo "")"
     [ -z "$newtree" ] && { echo "上流に $path が無い（bump 中止）" >&2; rm -f "$tmp"; exit 2; }
     jq --argjson i "$i" --arg t "$newtree" --arg c "$newcommit" \
        '.vendored[$i].pinnedTreeHash=$t | .vendored[$i].pinnedCommit=$c' "$tmp" > "$tmp.2" && mv "$tmp.2" "$tmp"
   done
   mv "$tmp" "$PIN"
-  echo "vendored の pin を上流 HEAD ($HEAD_SHORT) に更新しました。" >&2
+  echo "vendored の pin を上流リリース $REF_LABEL に更新しました。" >&2
   echo "referenced のリネーム/削除は自動では直せません（参照側スキルの手当てが要ります）。" >&2
   exit 0
 fi
@@ -78,7 +92,7 @@ REPORT="$(mktemp)"
 {
   echo "## 上流 \`$REPO\` のドリフト検知"
   echo
-  echo "- 上流 HEAD: \`$HEAD_SHORT\`"
+  echo "- 照合基準: \`$REF_LABEL\`（\`npx skills@latest\` が入れる最新リリース）"
   echo "- 生成: \`scripts/check-vendored-skills.sh\`"
   echo
 } > "$REPORT"
@@ -91,7 +105,7 @@ for i in $(seq 0 $((n - 1))); do
   path="$(jq -r ".vendored[$i].upstreamPath" "$PIN")"
   local="$(jq -r ".vendored[$i].localFile" "$PIN")"
   pinned="$(jq -r ".vendored[$i].pinnedTreeHash" "$PIN")"
-  cur="$(up rev-parse "HEAD:$path" 2>/dev/null || echo MISSING)"
+  cur="$(up rev-parse "$REF:$path" 2>/dev/null || echo MISSING)"
   [ "$cur" = "$pinned" ] && continue
   DRIFT=1; vhit=1
   {
@@ -126,7 +140,7 @@ for i in $(seq 0 $((n - 1))); do
   name="$(jq -r ".referenced[$i].name" "$PIN")"
   path="$(jq -r ".referenced[$i].upstreamPath" "$PIN")"
   usedby="$(jq -r ".referenced[$i].usedBy | join(\", \")" "$PIN")"
-  up cat-file -e "HEAD:$path/SKILL.md" 2>/dev/null && continue
+  up cat-file -e "$REF:$path/SKILL.md" 2>/dev/null && continue
   if [ "$rmiss" = 0 ]; then
     { echo "### 🔗 参照先が上流から消えた（リネーム/削除の疑い）"; echo; } >> "$REPORT"
     rmiss=1; DRIFT=1
@@ -139,10 +153,10 @@ if [ "$rmiss" = 1 ]; then
     echo "<details><summary>現在の上流スキル一覧（新名を探す手掛かり）</summary>"
     echo
     echo '```'
-    for d in $(up ls-tree --name-only HEAD skills/); do
+    for d in $(up ls-tree --name-only "$REF" skills/); do
       base="$(basename "$d")"
       echo "$base:"
-      up ls-tree --name-only "HEAD:$d" 2>/dev/null | sed 's/^/  /'
+      up ls-tree --name-only "$REF:$d" 2>/dev/null | sed 's/^/  /'
     done
     echo '```'
     echo "</details>"
