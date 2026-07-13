@@ -2,10 +2,10 @@
 #
 # publish-company-skills.sh
 #
-# code/skills（正本）→ code/soramichi/plugins（会社共有ミラー, remote=soramichi-dev/soramichi-plugins）
+# code/skills（正本）→ code/soramichi/plugins（会社共有ミラー, remote=soramichi-git/soramichi-plugins）
 # への一方向ミラー同期。company-skills.txt に列挙されたスキルだけを対象にする。
 #
-# soramichi-dev は main への直接 push を禁止している（repository rule: "Changes must be made
+# soramichi-git は main への直接 push を禁止している（repository rule: "Changes must be made
 # through a pull request"）。そのため --push は直接 push ではなく、
 # 「ブランチ push → PR 作成 → squash マージ → ローカル main 同期」の PR フローで反映する。
 #
@@ -32,7 +32,7 @@
 #   --push はマージまで自動で行う。自分がそのセッションで作成した PR の squash マージは
 #   Claude Code の自動モード分類器が「自己承認・レビューなしマージ」として止めるため、Claude 経由
 #   だとマージ段階で停止することがある。その場合はユーザーが直接シェルで実行するか、表示された
-#   gh コマンドを手で打つ（`gh pr merge <branch> --repo soramichi-dev/soramichi-plugins --squash --delete-branch --admin`）。
+#   gh コマンドを手で打つ（`gh pr merge <branch> --repo soramichi-git/soramichi-plugins --squash --delete-branch --admin`）。
 set -euo pipefail
 
 # --- パス解決 -----------------------------------------------------------------
@@ -40,8 +40,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$(cd "$SCRIPT_DIR/.." && pwd)"                       # = code/skills
 DEST="${DEST:-$(cd "$SRC/.." && pwd)/soramichi/plugins}" # 既定: code/soramichi/plugins
 MANIFEST="$SRC/company-skills.txt"
-REMOTE_URL="https://github.com/soramichi-dev/soramichi-plugins.git"
-REPO_SLUG="soramichi-dev/soramichi-plugins"
+REMOTE_URL="https://github.com/soramichi-git/soramichi-plugins.git"
+REPO_SLUG="soramichi-git/soramichi-plugins"
 GIT_USER_NAME="Daisuke"
 GIT_USER_EMAIL="daisuke_mori@sora-michi.com"
 
@@ -251,7 +251,7 @@ if [ "$DO_PUSH" = 0 ]; then
 fi
 
 # --- PR フローで origin/main へ反映 -------------------------------------------
-# soramichi-dev は main 直接 push 禁止のため、ブランチ push → PR 作成 → squash マージ → 同期。
+# soramichi-git は main 直接 push 禁止のため、ブランチ push → PR 作成 → squash マージ → 同期。
 SRC_SHA="$(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 
 # 反映すべきコミットが origin/main に対してあるか

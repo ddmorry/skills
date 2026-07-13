@@ -6,7 +6,7 @@
     "name": "SORAMICHI",
     "email": "daisuke_mori@sora-michi.com"
   },
-  "homepage": "https://github.com/soramichi-dev/soramichi-plugins",
-  "repository": "https://github.com/soramichi-dev/soramichi-plugins",
+  "homepage": "https://github.com/soramichi-git/soramichi-plugins",
+  "repository": "https://github.com/soramichi-git/soramichi-plugins",
   "keywords": ["soramichi", "workflow", "design", "implementation", "afk", "hitl", "subagent"]
 }
