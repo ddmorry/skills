@@ -10,16 +10,17 @@
 > 目的: 本リポジトリ（{{DOMAIN}}のエージェントワークスペース）と Linear を接続するための **対応関係・接続方法・正の所在・ディレクトリ運用**を定義する。
 > このドキュメントだけで、本 repo で作業する Claude Code セッションが Linear をどう読み書きし、{{WORK_DIR}} とどう同期するかが分かる状態を目指す。
 >
-> 対象 Linear teams: `{{PARENT_TEAM}}`（親）, `{{CHILD_TEAM}}`（子）
+> 対象 Linear teams: `{{PARENT_TEAM}}`（親）, `{{CHILD_TEAM}}`（子）。作業の永続単位は `{{CHILD_TEAM}}` の **Project**。
 
 ---
 
 ## 0. 最重要サマリ（先に読む）
 
-- **チーム対応**: `{{PARENT_TEAM}}`（親）= 本リポジトリ全体（ワークスペース基盤 ＋ 非案件の{{DOMAIN}}業務）。`{{CHILD_TEAM}}`（子）= `{{WORK_DIR}}`（部門からの個別依頼・作業単位、**作業 1 件 = issue 1 件 = {{WORK_DIR}} ディレクトリ 1 件**）。親は子の issue をロールアップ表示する。
-- **接続方法**: 主経路は **Linear MCP**。本 repo で作業する Claude Code が issue の一覧取得・作成・コメント・ステート変更・ラベル付与を行う。
+- **チーム対応**: `{{PARENT_TEAM}}`（親）= 本リポジトリ全体（ワークスペース基盤 ＋ 非案件の{{DOMAIN}}業務）。`{{CHILD_TEAM}}`（子）= `{{WORK_DIR}}`（部門からの個別依頼）。親は子の issue / Project をロールアップ表示する。
+- **作業の永続単位は Project**: `{{CHILD_TEAM}}` の中で、一定期間続く取り組みを **Linear Project** にする（**1 Project = {{WORK_DIR}} ディレクトリ 1 件**）。個々のタスク・相談は **issue**（Project に属する）で、issue は短命でよい。Project は継続し、対応する Orca worktree・作業ディレクトリも継続する（実行レイヤは `docs/orca-linear-worktree-workflow.md`）。
+- **接続方法**: 主経路は **Linear MCP**。本 repo で作業する Claude Code が issue / Project の一覧取得・作成・コメント・ステート変更・ラベル付与を行う。
 - **正の所在（二重管理を避ける鉄則）**: ステータス・受け渡し・会話・監査証跡は **Linear が正**。受領原本・作業ファイル・成果物・作業メモは **`{{WORK_DIR}}`（= git）が正**。両者を相互リンクするが、内容は複製しない。
-- **binding**: {{WORK_DIR}} ディレクトリ名は命名規則（`{{DIR_NAMING}}`）に従う。ディレクトリ README の先頭に `Linear:` フィールドで issue 識別子と URL を記録し、Linear issue の説明には {{WORK_DIR}} 相対パスを書いて相互参照する。
+- **binding**: {{WORK_DIR}} ディレクトリは Project 1件に対応し、命名規則（`{{DIR_NAMING}}`）に従う。README の先頭に Project の識別子・URL を記録し、Linear の Project 説明には {{WORK_DIR}} 相対パスを書いて相互参照する。
 - **責任モデル**: コパイロット型。AI はドラフト・調査・起票まで、{{DOMAIN}}判断／承認の名義は常に人間。Linear の `In Review` = 人間レビュー段。
 
 ---
@@ -28,28 +29,29 @@
 
 作業単位が `{{WORK_DIR}}` に記録されても、「いま何件が、どの状態で、いつから止まっているか」を横断で見る台帳が無い。Linear を接続することで:
 
-1. **台帳ができる** — 作業 1 件 = issue 1 件。件数・状態・滞留が可視化される（ステータスの正）。
+1. **台帳ができる** — 継続する取り組み = Project、その中のタスク = issue。件数・状態・滞留が可視化される（ステータスの正）。
 2. **AI と人間の受け渡し点になる** — Claude が生成したドラフトを issue コメントに置き、人間がレビューして確定する非同期分業。
 3. **監査証跡が残る** — 誰がいつ受け付け、どう判定し、誰の名義で確定したか。コパイロット型責任モデルの担保。
-4. **AI への委任単位になる** — issue は「スコープ・受け入れ条件・証跡」を備えた、Claude Code に仕事を渡す自然な単位。
+4. **AI への委任単位になる** — Project は「一定期間続く作業文脈」を Claude に渡す単位、issue はその中の個別タスクを渡す単位。
 
 ---
 
 ## 2. チーム ↔ リポジトリの対応
 
 - **`{{PARENT_TEAM}}`（親）** ⇔ リポジトリ全体（`scripts/` / `docs/` などワークスペース基盤 ＋ 非案件の{{DOMAIN}}機能 issue）
-  - **`{{CHILD_TEAM}}`（子）** ⇔ `{{WORK_DIR}}`（個別依頼・作業単位）。親でロールアップ表示される
-    - `{{CHILD_KEY}}-n` issue ⇔ `{{WORK_DIR}}/{{DIR_NAMING}}/`（1 件 = 1 issue = 1 ディレクトリ）
+  - **`{{CHILD_TEAM}}`（子）** ⇔ `{{WORK_DIR}}`（個別依頼）。親でロールアップ表示される
+    - **Project** ⇔ `{{WORK_DIR}}/{{DIR_NAMING}}/`（1 Project = 1 ディレクトリ・継続）
+      - `{{CHILD_KEY}}-n` issue ⇔ Project の中のタスク（短命。ディレクトリは Project のものを共有）
 
-| Linear team | 対応スコープ | 何を issue にするか |
+| Linear team | 対応スコープ | 何を Project / issue にするか |
 | --- | --- | --- |
 | **{{PARENT_TEAM}}**（親） | リポジトリ全体のうち **{{WORK_DIR}} 以外**。ワークスペース基盤（scripts / docs / 連携）と、非案件の{{DOMAIN}}機能。 | 横断・基盤タスク、非案件の{{DOMAIN}}業務。**{{WORK_DIR}} ディレクトリは切らない**。 |
-| **{{CHILD_TEAM}}**（子） | `{{WORK_DIR}}`。部門からの個別依頼・作業単位。 | **依頼 1 件 = issue 1 件**。{{WORK_DIR}} ディレクトリと 1:1 対応。 |
+| **{{CHILD_TEAM}}**（子） | `{{WORK_DIR}}`。部門からの個別依頼。 | **一定期間続く取り組み = Project**（{{WORK_DIR}} ディレクトリと 1:1）。その中のタスク = issue。 |
 
-- 親子関係により、{{PARENT_TEAM}} のビューでは {{CHILD_TEAM}} の issue もロールアップされ、{{DOMAIN}}全体の滞留を一望できる。
-- 「個別依頼かどうか」が team の振り分け基準。部門からの個別依頼 → {{CHILD_TEAM}}、それ以外の業務 → {{PARENT_TEAM}}。
+- 親子関係により、{{PARENT_TEAM}} のビューでは {{CHILD_TEAM}} の Project / issue もロールアップされ、{{DOMAIN}}全体の滞留を一望できる。
+- 「個別依頼かどうか」が team の振り分け基準。部門からの個別依頼 → {{CHILD_TEAM}} の Project、それ以外の業務 → {{PARENT_TEAM}}。
 
-> **Team identifier**: workspace = `{{WORKSPACE}}`、{{CHILD_TEAM}} の identifier = `{{CHILD_KEY}}`（issue は `{{CHILD_KEY}}-n`）、{{PARENT_TEAM}} = `{{PARENT_KEY}}`（`{{PARENT_KEY}}-n`）。issue URL は `https://linear.app/{{WORKSPACE}}/issue/<ID>`。
+> **identifier**: workspace = `{{WORKSPACE}}`、{{CHILD_TEAM}} の identifier = `{{CHILD_KEY}}`（issue は `{{CHILD_KEY}}-n`）、{{PARENT_TEAM}} = `{{PARENT_KEY}}`（`{{PARENT_KEY}}-n`）。issue URL は `https://linear.app/{{WORKSPACE}}/issue/<ID>`、Project URL は `https://linear.app/{{WORKSPACE}}/project/<slug>`。
 
 ---
 
@@ -62,17 +64,17 @@
 | 操作 | 使う MCP ツール | 用途 |
 | --- | --- | --- |
 | 一覧取得 | `list_issues` / `list_projects` / `list_teams` | 未処理の把握、triage 対象の抽出 |
-| 起票 | `save_issue` | 依頼を {{CHILD_TEAM}} に、横断作業を {{PARENT_TEAM}} に起票 |
+| 起票 | `save_issue` / `save_project` | Project を {{CHILD_TEAM}} に、その中のタスクを issue に、横断作業を {{PARENT_TEAM}} に |
 | ドラフト受け渡し | `save_comment` | 調査結果・ドラフトを issue コメントに投稿 |
-| ステート遷移 | `save_issue`（state 指定） | Backlog→Todo→In Progress→In Review→Done |
+| ステート遷移 | `save_issue` / `save_project`（state 指定） | issue: Backlog→Todo→In Progress→In Review→Done。Project: Planned→Started→Completed |
 | 属性付与 | `save_issue`（label 指定） / `create_issue_label` | 種別・機密度・区分ラベル |
-| 記録参照 | `get_issue` / `list_comments` | {{WORK_DIR}} 作業時に issue の文脈を取得 |
+| 記録参照 | `get_issue` / `get_project` / `list_comments` | {{WORK_DIR}} 作業時に文脈を取得 |
 
 - **書き込み権限の扱い**: Linear への write は外向きの操作。ラベル体系の新設・ステート遷移・クローズなど後戻りしにくい操作は、人間の承認・指示のもとで行う（コパイロット型）。
 
-### 3.2 実行レイヤ: Orca worktree（issue 単位の作業場）
+### 3.2 実行レイヤ: Orca worktree（Project 単位の存続する作業場）
 
-{{CHILD_TEAM}} issue を「issue 単位の Orca worktree」で処理するローカル実行フローを別途定義している → `docs/orca-linear-worktree-workflow.md`。要点: Linear team `{{CHILD_TEAM}}` ⇄ Orca `{{CHILD_TEAM}}` lane worktree ⇄ その配下（Orca 系譜）に issue ごとの worktree を切り Claude Code を起動する。dispatcher は `scripts/orca-linear-dispatch.mjs`（Todo の issue のみ・冪等・オンデマンド）。
+{{CHILD_TEAM}} の Project を「Project 単位の Orca worktree」で処理するローカル実行フローを別途定義している → `docs/orca-linear-worktree-workflow.md`。要点: Linear team `{{CHILD_TEAM}}` ⇄ Orca `{{CHILD_TEAM}}` lane worktree ⇄ その配下に **Project ごとの存続する worktree**（`proj-<slug>`）、さらに大きめ issue のときだけその下に Issue worktree。通常 issue は Project worktree の中で対応する。dispatcher は `scripts/orca-linear-dispatch.mjs`（進行中 Project の worktree を冪等に用意・オンデマンド）。
 
 ---
 
@@ -86,12 +88,12 @@
 | 受け渡し・進捗の会話 | **Linear**（issue コメント） | — |
 | 期限・担当・優先度 | **Linear** | — |
 | 種別・機密度・区分の分類 | **Linear**（ラベル） | README にも分類を明記 |
-| 監査証跡（誰がいつ何を判断） | **Linear**（issue 履歴） | — |
-| 受領原本 | **`{{WORK_DIR}}/<件>/received/`**（git） | Linear には置かない（機密・容量） |
-| 作業ファイル | **`{{WORK_DIR}}/<件>/work/`**（git） | — |
-| 成果物 | **`{{WORK_DIR}}/<件>/output/`**（git） | 確定版の要点のみ issue コメントで受け渡し |
-| 経緯の逐語記録 | **`{{WORK_DIR}}/<件>/context/`**（git） | — |
-| 作業メモ（当事者・経緯・分類・次アクション） | **`{{WORK_DIR}}/<件>/README.md`** | Linear の issue 説明は要約＋リンクに留める |
+| 監査証跡（誰がいつ何を判断） | **Linear**（issue / Project 履歴） | — |
+| 受領原本 | **`{{WORK_DIR}}/<Project>/received/`**（git） | Linear には置かない（機密・容量） |
+| 作業ファイル | **`{{WORK_DIR}}/<Project>/work/`**（git） | — |
+| 成果物 | **`{{WORK_DIR}}/<Project>/output/`**（git） | 確定版の要点のみ issue コメントで受け渡し |
+| 経緯の逐語記録 | **`{{WORK_DIR}}/<Project>/context/`**（git） | — |
+| 作業メモ（当事者・経緯・分類・次アクション） | **`{{WORK_DIR}}/<Project>/README.md`** | Linear の Project / issue 説明は要約＋リンクに留める |
 
 ### ドラフトの同期ルール
 
@@ -105,18 +107,18 @@
 
 ## 5. ディレクトリ構成と binding
 
-### 5.1 命名
+### 5.1 命名（1 Project = 1 ディレクトリ）
 
 ```
-{{WORK_DIR}}/{{DIR_NAMING}}/
-├── README.md    # 先頭に Linear フィールド（下記）＋当事者・経緯・分類・次アクション
+{{WORK_DIR}}/{{DIR_NAMING}}/          # ← 1 Project 1件（一定期間存続）
+├── README.md    # 先頭に Linear Project フィールド（下記）＋当事者・経緯・分類・次アクション
 ├── received/    # 受領原本
 ├── context/     # 経緯の逐語記録
 ├── work/        # 作業ファイル
-└── output/      # 成果物
+└── output/      # 成果物（Project の issue をまたいで集約）
 ```
 
-ディレクトリ名に issue 識別子（`{{CHILD_KEY}}-12` 等）は**付けない**。理由: issue 採番前にディレクトリを作れる、既存の改名が不要、識別子は README で解決できる。
+ディレクトリ名に identifier（`{{CHILD_KEY}}-12` 等）は**付けない**。理由: 採番前にディレクトリを作れる、既存の改名が不要、識別子は README で解決できる。Project の中の個々の issue は、原則このディレクトリを共有する（大きめ issue で分離したい場合のみサブディレクトリを切ってよい）。
 
 ### 5.2 相互参照（binding）
 
@@ -125,18 +127,19 @@
   ```markdown
   # <ディレクトリ名>
 
-  - Linear: {{CHILD_KEY}}-12 — https://linear.app/{{WORKSPACE}}/issue/{{CHILD_KEY}}-12
+  - Linear Project: <Project 名> — https://linear.app/{{WORKSPACE}}/project/<slug>
   - Team: {{CHILD_TEAM}}
+  - Orca worktree: proj-<slug>
   ```
 
-  issue 未起票の段階では `Linear: (未起票)` とし、起票時に識別子と URL を埋める。
+  Project 未作成の段階では `Linear Project: (未作成)` とし、作成時に名前と URL を埋める。個別 issue は Linear 側で Project にぶら下げ、必要なら README の作業ログから `{{CHILD_KEY}}-n` を参照する。
 
-- **Linear → {{WORK_DIR}}**: issue の説明（description）の冒頭に {{WORK_DIR}} 相対パスを書く。双方向に辿れる状態にする。
+- **Linear → {{WORK_DIR}}**: Project の説明（description）の冒頭に {{WORK_DIR}} 相対パスを書く。双方向に辿れる状態にする。
 
 ### 5.3 対応の粒度
 
-- **依頼 1 件 = {{CHILD_TEAM}} issue 1 件 = {{WORK_DIR}} ディレクトリ 1 件**。
-- **軽い QA・数分で終わる問い合わせは起票せず {{WORK_DIR}} も切らない**（チケットインフレの回避）。受け渡しが発生し・成果物が出て・数分で終わらない依頼から issue + ディレクトリを切る。
+- **一定期間続く取り組み 1 件 = {{CHILD_TEAM}} Project 1 件 = {{WORK_DIR}} ディレクトリ 1 件**。その中の個別タスクは issue。
+- **軽い QA・数分で終わる問い合わせは Project も issue も切らない**（チケットインフレの回避）。受け渡しが発生し・成果物が出て・一定期間続く取り組みから Project + ディレクトリを切る。単発でも一定の作業量がある依頼は、小さな Project 1件（issue 1件）として扱ってよい。
 
 ---
 
@@ -156,16 +159,18 @@
 
 ### ステータス運用（ワークフロー state に対応づけ）
 
-{{CHILD_TEAM}} の state（Backlog / Todo / In Progress / In Review / Done / Canceled）を作業ライフサイクルに割り当てる:
+**issue** の state（Backlog / Todo / In Progress / In Review / Done / Canceled）を作業ライフサイクルに割り当てる:
 
 | state | 意味 |
 | --- | --- |
 | Backlog | 受付済み・未着手（トリアージ待ち） |
-| Todo | 着手予定（dispatcher が worktree を切る対象） |
+| Todo | 着手予定（Project worktree の中で着手する対象） |
 | In Progress | Claude Code が調査・レビュー・ドラフト作成中 |
 | **In Review** | **ドラフトを人間がレビュー中**（コパイロット型の受け渡し段） |
 | Done | 確定・クローズ。記録を {{WORK_DIR}} に確定 |
 | Canceled | 取り下げ・対応不要 |
+
+**Project** の state（Planned / Started / Paused / Completed / Canceled）は取り組みのライフサイクルに対応する。dispatcher は既定で **Started / Planned** の Project に worktree を用意し、**Completed / Canceled** で worktree を片付ける（`docs/orca-linear-worktree-workflow.md` §3.3）。
 
 ---
 
@@ -183,14 +188,15 @@
 flowchart TD
     A["受付"] --> B{"起票判断<br/>（下限基準）"}
     B -->|"軽い QA"| Z["直答・起票しない"]
-    B -->|"依頼"| C["{{WORK_DIR}}/<件>/ を作成<br/>README に Linear:(未起票)"]
-    C --> D["{{CHILD_TEAM}} に issue 起票（Backlog/Todo）<br/>ラベル付与・description に {{WORK_DIR}} パス"]
-    D --> E["README の Linear: を {{CHILD_KEY}}-n + URL に更新"]
-    E --> F["Todo → dispatcher が worktree + Claude Code 起動"]
-    F --> G["In Progress: 調査・レビュー・ドラフト<br/>output/ に生成・要点を issue コメントで受け渡し"]
+    B -->|"一定期間続く取り組み"| C["{{WORK_DIR}}/<Project>/ を作成<br/>README に Linear Project:(未作成)"]
+    C --> D["{{CHILD_TEAM}} に Project 起票（Planned/Started）<br/>description に {{WORK_DIR}} パス"]
+    D --> E["README の Linear Project: を 名前 + URL に更新"]
+    E --> F["dispatcher が proj-<slug> worktree + Claude Code 起動（存続）"]
+    F --> G["Project の中で issue を立て対応<br/>In Progress: 調査・レビュー・ドラフト<br/>output/ に生成・要点を issue コメントで受け渡し"]
     G --> H["In Review: 人間がレビュー・修正指示"]
-    H --> I["人間名義で確定"]
-    I --> J["Done: issue クローズ<br/>README に節目を追記・output 確定"]
+    H --> I["人間名義で確定 → issue Done<br/>（worktree は存続・次の issue へ）"]
+    I -->|"取り組み継続"| G
+    I -->|"取り組み完了"| J["Project を Completed<br/>成果を main へ統合・worktree 片付け"]
 ```
 
 ---
@@ -199,4 +205,4 @@ flowchart TD
 
 - **機密度の実効的アクセス制御**（private team / プラン選定）— 別途検討。
 - **triage の自動起動**（cron / webhook / Cloud 実行）— Orca はローカルで webhook を受けられないためポーリング（`docs/orca-linear-worktree-workflow.md` 参照）。
-- **Linear projects の活用** — 作業単位は「1 件 = 1 issue」のフラット運用。大型プロジェクトで束ねる運用は {{PARENT_TEAM}} 側で別途検討する。
+- **Project ⇄ worktree のネイティブ紐付け** — Orca は現状 worktree を Linear Project に紐付けられない（`--linear-project` 無し）ため、`proj-<slug>` の名前規約で対応づけている。将来 Orca が対応したら移行を検討する。
