@@ -1,6 +1,6 @@
 ---
 name: linear-orca-workspace-setup
-description: 新しい業務部門（財務・経理・人事・法務など）のエージェントワークスペース repo を立ち上げ、Linear チーム階層 ⇄ リポジトリ ⇄ Orca の worktree（Team→Project→Issue の3階層）を対応づける「初回セットアップ」を業務非依存の汎用手順で行うスキル。親チーム=repo全体（横断・基盤・非案件業務）、子チーム(lane)=個別依頼レーン（1階層目 worktree）、Linear Project=永続の作業単位（2階層目 worktree・Project と同じ期間存続し文脈を蓄積）、大きめ Issue=オンデマンドの3階層目 worktree（通常 issue は Project worktree 内で作業）。「team名 = laneブランチ名 = dispatcher引数」の一致規約と「Linear Project名 → proj-<slug> worktree」の対応、正の所在分担（Linear=状態/受け渡し、git=原本/成果物）、進行中 Project を冪等に worktree 化する dispatcher、コパイロット型責任モデルを一式そろえる。使用タイミング: ユーザーが「新しい業務ワークスペースをセットアップ」「財務/経理でも法務(legal-dock)と同じ Linear+worktree の仕組みを立ち上げたい」「別部門用に Project→worktree 連携を初期構築して」「この業務にも Orca dispatcher を入れて」「Linear チームとリポジトリを対応づけて worktree で回す仕組みを作って」と言ったとき。個別 issue の実作業や日々の dispatch そのものではなく、その土台を新規に敷く初回セットアップを担い、日々の運用は生成した dispatcher / docs に引き継ぐ。
+description: 新しい業務部門（財務・経理・人事・法務など）のエージェントワークスペース repo を立ち上げ、Linear チーム階層 ⇄ リポジトリ ⇄ Orca の worktree（Team→Project→Issue の3階層）を対応づける「初回セットアップ」を業務非依存の汎用手順で行うスキル。親チーム=repo全体（横断・基盤・非案件業務）、子チーム(lane)=個別依頼レーン（1階層目 worktree）、Linear Project=永続の作業単位（2階層目 worktree・Project と同じ期間存続し文脈を蓄積）、大きめ Issue=オンデマンドの3階層目 worktree（通常 issue は Project worktree 内で作業）。「team名 = laneブランチ名 = dispatcher引数」の一致規約と「Linear Project名 → proj-<slug> worktree」の対応、正の所在分担（Linear=状態/受け渡し、git=原本/成果物）、進行中 Project を冪等に worktree 化する dispatcher、コパイロット型責任モデルを一式そろえる。使用タイミング: ユーザーが「新しい業務ワークスペースをセットアップ」「財務/経理でも法務(legal-dock)と同じ Linear+worktree の仕組みを立ち上げたい」「別部門用に Project→worktree 連携を初期構築して」「この業務にも Orca dispatcher を入れて」「Linear チームとリポジトリを対応づけて worktree で回す仕組みを作って」と言ったとき。個別 issue の実作業や日々の dispatch そのものではなく、その土台を新規に敷く初回セットアップ（1 repo につき原則1回）を担う。日々の運用/dispatch（進行中 Project の worktree 化・issue 着手・統合/クローズ・レーン/Project 追加）は姉妹スキル linear-orca-dispatch が担うので、セットアップ済み repo での運用指示にはこのスキルを使わない。
 ---
 
 # linear-orca-workspace-setup — 業務ワークスペースの初回セットアップ
@@ -12,7 +12,7 @@ worktree 階層を Linear の階層に合わせる: **Team（lane）→ Project 
 ## このスキルがやること / やらないこと
 
 - **やる（初回セットアップ）**: Linear チーム階層（＋ Project 運用）の設計と確認、正の所在・binding 規約の repo への落とし込み、dispatcher スクリプトと運用 doc の配置、Orca lane worktree の用意、smoke test。**1 業務 repo につき原則 1 回**。
-- **やらない（日々の運用）**: 個別 issue の実作業、日々の dispatch、Project / issue のクローズ・統合。これらはセットアップで**生成した `scripts/orca-linear-dispatch.mjs` と `docs/` が担う**。本スキルは最後にそこへ引き渡して終わる。
+- **やらない（日々の運用）**: 個別 issue の実作業、日々の dispatch、Project / issue のクローズ・統合。これらは**姉妹スキル `linear-orca-dispatch`** が、セットアップで生成した `scripts/orca-linear-dispatch.mjs` と `docs/` を使って担う。本スキルは最後にそこへ引き渡して終わる。運用側はセットアップ要否を面接しない設計なので、セットアップ済み repo での運用指示は必ず運用スキルへ向かわせる。
 
 ## 前提
 
@@ -68,13 +68,13 @@ worktree 階層を Linear の階層に合わせる: **Team（lane）→ Project 
 
 対象 repo（`{{REPO}}`）に以下を作る。**このスキルの `scripts/` と `references/` から実ファイルをコピーし、プレースホルダを埋める**。
 
-1. **dispatcher**: このスキルの `scripts/orca-linear-dispatch.mjs` を repo の `scripts/orca-linear-dispatch.mjs` に**そのままコピー**（業務非依存・編集不要。repo 名は git から自動判定）。業務固有の参照先を初期プロンプトに足したい場合のみ `buildPrompt` を編集する。
+1. **dispatcher**: このスキルの `scripts/orca-linear-dispatch.mjs` を repo の `scripts/orca-linear-dispatch.mjs` に**そのままコピー**（業務非依存・編集不要。repo 名は git から自動判定）。業務固有の参照先を初期プロンプトに足したい場合のみ `buildProjectPrompt` / `buildIssuePrompt` を編集する。
 2. **運用 doc 2 本**: このスキルの `references/*.template.md` を repo の `docs/` にコピーし、`.template` を外し、`{{...}}` を Step 0 の値で全置換:
    - `references/linear-integration.template.md` → `docs/linear-integration.md`
    - `references/orca-worktree-workflow.template.md` → `docs/orca-linear-worktree-workflow.md`
    - 先頭の HTML コメント（テンプレ注記）は削除する。埋め残しの `{{` が無いか grep で確認。
 3. **作業ディレクトリ**: `{{WORK_DIR}}/README.md` を作る（命名規則 `{{DIR_NAMING}}`・サブディレクトリ received/context/work/output・binding ブロック・正の所在ルール）。`docs/linear-integration.md` §5 と同じ規約を要約して書く。
-4. **CLAUDE.md への追記**: repo の `CLAUDE.md` に「Linear 連携」節を足し、チーム対応・正の所在・`docs/` へのポインタ・コパイロット型責任モデルを記す（無ければ簡潔に新設）。業務ドメインの中身（何を扱う repo か・外部ソースは何か）は業務側の記述で、本スキルは連携の骨格だけ足す。
+4. **CLAUDE.md への追記**: repo の `CLAUDE.md` に「Linear 連携」節を足し、チーム対応・正の所在・`docs/` へのポインタ・コパイロット型責任モデル・**日々の運用は `linear-orca-dispatch` スキル（または `docs/orca-linear-worktree-workflow.md` の dispatcher）で回すこと**を記す（無ければ簡潔に新設）。業務ドメインの中身（何を扱う repo か・外部ソースは何か）は業務側の記述で、本スキルは連携の骨格だけ足す。
 
 **完了基準**: `scripts/orca-linear-dispatch.mjs`・`docs/linear-integration.md`・`docs/orca-linear-worktree-workflow.md`・`{{WORK_DIR}}/README.md` が置かれ、doc に `{{` の埋め残しが無い。
 
@@ -134,14 +134,14 @@ worktree 階層を Linear の階層に合わせる: **Team（lane）→ Project 
 
 ## Step 5 — 日々の運用へ引き渡し
 
-セットアップはここまで。以降の運用は生成物が持つ:
+セットアップはここまで。**以降の運用/dispatch は姉妹スキル `linear-orca-dispatch` が担う**（このスキルはもう使わない）。運用スキルはセットアップ要否を面接せず、生成した dispatcher/docs をそのまま運転する:
 
 - **dispatch**: `node scripts/orca-linear-dispatch.mjs {{CHILD_TEAM}}`（進行中 Project を worktree 化）。大きめ issue は `--project "<名>" --issue <ID>`。
 - **Project / issue 作業**: 各 worktree の Claude が dispatcher の初期プロンプトに従う（通常 issue は Project worktree の中）。
 - **完了→統合→クローズ**: `docs/orca-linear-worktree-workflow.md` §3（issue を In Review → 承認後 Project ブランチ経由で main へ統合 → lane を ff → Done。**Project worktree は存続**、片付けは Project のクローズ時 §3.3）。
 - **レーン / Project 追加**: 同 doc §8。
 
-ユーザーに「セットアップ完了。日々の運用は `docs/orca-linear-worktree-workflow.md` を参照」と引き渡して終了する。
+ユーザーに「セットアップ完了。日々の運用は `linear-orca-dispatch` スキル（詳細は `docs/orca-linear-worktree-workflow.md`）で回してください」と引き渡して終了する。
 
 ---
 
