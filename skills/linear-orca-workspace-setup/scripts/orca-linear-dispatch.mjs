@@ -139,13 +139,30 @@ function slugify(name) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
-// Project worktree/ブランチ名（決定的・ブランチ名として妥当）。
-// 名前が非 ASCII（例: 日本語 project 名）で slug が短すぎる場合は project id 先頭8桁にフォールバック。
+// Project 名に埋め込む明示スラグトークン `[english-slug]` / `{english-slug}` を取り出す。
+// 日本語など非 ASCII の Project 名でも、この括弧トークンで読みやすい英語の worktree 名を
+// 指定できる（例: 「八十二銀行 借入ロールオーバー [82bank-rollover]」→ proj-82bank-rollover）。
+function projectSlugToken(name) {
+  const m = String(name || "").match(/[\[{]\s*([A-Za-z0-9][A-Za-z0-9 _-]*?)\s*[\]}]/);
+  return m ? slugify(m[1]) : "";
+}
+// Project worktree/ブランチ名（決定的・ブランチ名として妥当・できるだけ読みやすい英語）。
+// 決定的でないと冪等性が崩れるため、翻訳ではなく Project 名から機械的に導出する。
+// 優先順位:
+//   1. 名前中の [slug] トークン（人が付けた端的な英語スラグ）→ proj-<slug>
+//   2. 名前全体を ASCII slug 化（英語名 project 用。日本語混在でも ASCII 部分を拾う）→ proj-<slug>（40字上限）
+//   3. どちらも取れない（純非 ASCII 名）→ project id 先頭8桁 → proj-<id8>（不透明。[slug] 追記を推奨）
 function projectWorktreeName(project) {
+  const token = projectSlugToken(project?.name);
+  if (token && token.length >= 2) return `proj-${token}`;
   const slug = slugify(project?.name);
-  if (slug && slug.length >= 2) return `proj-${slug}`;
+  if (slug && slug.length >= 2) return `proj-${slug.slice(0, 40)}`;
   const id8 = String(project?.id || "").replace(/-/g, "").slice(0, 8);
   return id8 ? `proj-${id8}` : `proj-unknown`;
+}
+// worktree 名が不透明な id8 フォールバックに落ちているか（＝ [slug] 追記を促すため）。
+function usesOpaqueName(project) {
+  return !projectSlugToken(project?.name) && slugify(project?.name).length < 2;
 }
 // project の state（type）を防御的に読む（形状未確定のため複数パスを試す）。
 function projectState(p) {
@@ -209,8 +226,20 @@ if (!laneWt) {
   );
 }
 
-// 既存 worktree をブランチ名で索く（Project worktree の冪等判定に使う）
-const worktreeByBranch = new Map(worktrees.map((w) => [branchName(w.branch), w]));
+// 既存 worktree を「名前」で索く（Project / Issue worktree の冪等判定に使う）。
+// 注意: Orca は git username を branch に前置しうる（例: --name proj-x で作っても
+// branch=<user>/proj-x）。一方 worktree の path basename は渡した --name そのもの。
+// そこで path basename を第一キーに、branch 名・prefix 除去後 branch 名も副キーにして、
+// どの表記でも既存を検知できるようにする（gitUsername prefix でも冪等が崩れないように）。
+const worktreeByName = new Map();
+for (const w of worktrees) {
+  const b = branchName(w.branch); // 例: ddmorry/proj-0e44d0d6
+  const base = w.path ? path.basename(w.path) : ""; // 例: proj-0e44d0d6（= --name）
+  const bStripped = b.replace(/^[^/]+\//, ""); // 先頭 <seg>/ を除去した branch 名
+  for (const key of [base, b, bStripped]) {
+    if (key && !worktreeByName.has(key)) worktreeByName.set(key, w);
+  }
+}
 // 既に issue が紐付いている worktree（Issue worktree の冪等判定に使う）
 const linkedIssues = new Set(
   worktrees.map((w) => normalizeIssueRef(w.linkedLinearIssue)).filter(Boolean)
@@ -233,6 +262,21 @@ if (!anyTeamLinkage && allProjects.length) {
 }
 const laneKeys = new Set([team.key, team.name, team.id].filter(Boolean).map((s) => String(s).toLowerCase()));
 
+// state フィールドが JSON に一切現れないなら active 判定不能。
+// この Orca 版の `orca linear project list` は project state/status を返さない
+// （id/name/url/workspace/teams のみ）。Linear の project list は既定で完了/中止を
+// 除外するため、返る project は実質アクティブ。よって state が皆無なら fail-open
+// （lane に属する project を対象）にする。team fail-open と同じ防御イディオム。
+const anyStateLinkage = allProjects.some((p) => projectState(p) !== null);
+if (!anyStateLinkage && allProjects.length) {
+  console.warn(
+    `⚠ project list の JSON に state が無いため active 判定ができません（この Orca 版の制約）。\n` +
+      `  lane '${lane}' に属する project をすべて対象にします（Linear の list は既定で完了/中止を除外）。\n` +
+      `  完了/中止した project の worktree を作りたくない場合は、Linear 側で該当 project を完了にし、\n` +
+      `  必要なら --project "<name>" で明示指定、--dry-run で内容を確認してください。`
+  );
+}
+
 function inLane(p) {
   const keys = projectTeamKeys(p);
   if (keys.size === 0) return !anyTeamLinkage; // 紐付け皆無なら fail-open、部分的にあるなら除外
@@ -241,7 +285,7 @@ function inLane(p) {
 }
 function isActive(p) {
   const s = projectState(p);
-  if (!s) return false; // state 不明は fail-closed（完了 project に worktree を作らない）
+  if (!s) return !anyStateLinkage; // state 皆無なら fail-open、部分的にあるなら fail-closed（完了 project に作らない）
   return activeStates.includes(s);
 }
 
@@ -283,28 +327,36 @@ if (dryRun) {
 if (issueId) {
   const project = targetProjects[0];
   const projName = projectWorktreeName(project);
-  const projWt = worktreeByBranch.get(projName);
+  let projWt = worktreeByName.get(projName);
 
   // Project worktree が無ければ先に用意する
   if (!projWt) {
     console.log(`→ ${dryRun ? "[dry-run] " : ""}先に Project worktree を作成: ${projName}  (project "${project.name}")`);
-    if (!dryRun) ensureProjectWorktree(project);
+    if (!dryRun) {
+      ensureProjectWorktree(project);
+      // 作成直後の実体（実ブランチ名）を取り直す
+      const fresh = orca(["worktree", "list", "--repo", `name:${repoName}`]).worktrees ?? [];
+      projWt = fresh.find((w) => (w.path ? path.basename(w.path) : "") === projName);
+    }
   }
+  // 親/base には Project worktree の「実ブランチ名」を使う（Orca が gitUsername を
+  // 前置しうるため。例: proj-0e44d0d6 の実ブランチは ddmorry/proj-0e44d0d6）。
+  const projBranch = projWt ? branchName(projWt.branch) : projName;
 
   const id = issueId.toUpperCase();
   const issueBranch = id.toLowerCase();
-  if (linkedIssues.has(id) || worktreeByBranch.has(issueBranch)) {
+  if (linkedIssues.has(id) || worktreeByName.has(issueBranch)) {
     console.log(`= Issue worktree は既存（${id}）。スキップ。`);
   } else {
-    console.log(`→ ${dryRun ? "[dry-run] " : ""}Issue worktree 作成: ${issueBranch}  (${id}) 親=${projName}`);
+    console.log(`→ ${dryRun ? "[dry-run] " : ""}Issue worktree 作成: ${issueBranch}  (${id}) 親=${projName}（branch ${projBranch}）`);
     if (!dryRun) {
       const res = orca([
         "worktree", "create",
         "--repo", `id:${repoId}`,
         "--name", issueBranch,
         "--linear-issue", id,
-        "--parent-worktree", `branch:${projName}`,
-        "--base-branch", projName,
+        "--parent-worktree", `branch:${projBranch}`,
+        "--base-branch", projBranch,
         "--agent", "claude",
         "--prompt", buildIssuePrompt(lane, project, id, repoName),
       ]);
@@ -335,9 +387,15 @@ const created = [];
 const skipped = [];
 for (const project of targetProjects) {
   const name = projectWorktreeName(project);
-  if (worktreeByBranch.has(name)) {
+  if (worktreeByName.has(name)) {
     skipped.push(name);
     continue;
+  }
+  if (usesOpaqueName(project)) {
+    console.warn(
+      `⚠ "${project.name}" は英語スラグが取れないため worktree 名が不透明になります（${name}）。\n` +
+        `  Linear の Project 名末尾に端的な英語スラグを [ ] で付けると読みやすくなります（例: "${project.name} [short-slug]" → proj-short-slug）。`
+    );
   }
   console.log(`→ ${dryRun ? "[dry-run] " : ""}Project worktree 作成: ${name}  (project "${project.name}")`);
   if (dryRun) {

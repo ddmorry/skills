@@ -103,13 +103,15 @@ worktree 階層を Linear の階層に合わせる: **Team（lane）→ Project 
 
 ## Step 4 — 動作確認（smoke test）
 
-1. Linear の `{{CHILD_TEAM}}` にテスト **Project** を 1 件作り、state を **Started** にする（配下にテスト issue を 1〜2 件足すと尚良い）。
+1. Linear の `{{CHILD_TEAM}}` にテスト **Project** を 1 件作り、state を **Started** にする（配下にテスト issue を 1〜2 件足すと尚良い）。**Project 名が日本語のみだと worktree 名が `proj-<id8>` と不透明になるので、名前末尾に `[english-slug]` を付ける**（例「テスト案件 [smoke-test]」→ `proj-smoke-test`）。
 2. dry-run で対象に出ること・**project JSON の形状が正しく読めていること**を確認（重要）:
    ```bash
    node scripts/orca-linear-dispatch.mjs {{CHILD_TEAM}} --dry-run
    # 出力の「●対象」行で state=... team=... → proj-<slug> が期待どおりか確認
    ```
-   state / team 紐付けが `?` になっていたら、この repo の Linear が返す project JSON 形状に合わせて dispatcher の `projectState` / `projectTeamKeys` を調整する（`docs/orca-linear-worktree-workflow.md` §4・§9）。
+   - **team 紐付けが `?`** なら、この repo の Linear が返す project JSON 形状に合わせて dispatcher の `projectTeamKeys` を調整する（`docs/orca-linear-worktree-workflow.md` §4・§9）。
+   - **state が `?`**（＝ `orca linear project list` が state を返さない版）なら dispatcher は自動で fail-open して lane の Project を対象にする（調整不要）。state 形状が上表と違い誤判定するときだけ `projectState` を調整する。
+   - **導出 slug** が期待どおりか（`[english-slug]` を付けたら `proj-<slug>` になっているか、日本語のみなら `proj-<id8>` 警告が出るか）も確認する。
 3. 本実行 → Project worktree 作成と Claude Code 起動を確認:
    ```bash
    node scripts/orca-linear-dispatch.mjs {{CHILD_TEAM}}
