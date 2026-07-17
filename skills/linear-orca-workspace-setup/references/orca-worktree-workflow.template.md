@@ -35,7 +35,7 @@
 
 - **lane worktree**（`{{CHILD_TEAM}}`）は「レーン」。Project worktree はこの lane の子として作られ、Issue worktree は Project worktree の子として作られる。
 - lane 名がキー: **Linear team 名 = lane worktree のブランチ名 = dispatcher の第1引数**（例 `{{CHILD_TEAM}}`）。
-- Project 名がキー: **Linear Project 名 → `proj-<slug>` worktree/ブランチ → dispatcher の `--project "<名>"`**。`<slug>` は Project 名から決定的に導出される（`references/parameters.md` 参照）。Orca は worktree を Linear Project に紐付ける手段を持たない（`--linear-project` 無し）ため、この決定的な名前で同一性・冪等性を担保する。
+- Project 名がキー: **Linear Project 名 → `proj-<slug>` worktree/ブランチ → dispatcher の `--project "<名>"`**。`<slug>` は Project 名から決定的に導出される（優先順: ①名前中の `[english-slug]` トークン ②名前全体の ASCII slug ③純非 ASCII は project id 先頭8桁。詳細は `references/parameters.md`）。**日本語のみの Project 名は不透明な `proj-<id8>` になるため、Orca 上で判別できるよう Project 名末尾に `[english-slug]` を付ける**（例「八十二銀行 借入ロールオーバー [82bank-rollover]」→ `proj-82bank-rollover`）。Orca は worktree を Linear Project に紐付ける手段を持たない（`--linear-project` 無し）ため、この決定的な名前で同一性・冪等性を担保する。
 
 ---
 
@@ -157,13 +157,13 @@ node scripts/orca-linear-dispatch.mjs {{CHILD_TEAM}} --repo {{REPO}}
 
 1. `orca status` で runtime を確認。
 2. `orca linear team list` で lane 名から team（key）を解決。
-3. `orca worktree list --repo name:{{REPO}}` で repoId・lane worktree・既存の worktree（ブランチ名索引）を取得（repo 名は git から自動判定。`--repo` で上書き可）。
-4. `orca linear project list`（`--project` 指定時は `--query` 付き）で Project を取得。**auto モードは state ∈ {started, planned} かつ lane の team に属する Project** に絞る（`project list` は `--team` を持たないためクライアント側で照合。team 紐付けが JSON に無ければ絞れないので警告して全件対象）。
-5. 対象 Project ごとに `proj-<slug>` worktree（未作成なら）を lane を base に作成し、Claude Code を起動。`--issue` 指定時は、その Project worktree（無ければ先に作成）を親に Issue worktree を作成。
+3. `orca worktree list --repo name:{{REPO}}` で repoId・lane worktree・既存の worktree を取得（repo 名は git から自動判定。`--repo` で上書き可）。**既存 worktree は path basename（= 渡した `--name`）で索く**。Orca は環境によって branch に git username を前置する（`--name proj-x` でも branch=`<user>/proj-x`）が、basename は `--name` そのままなので prefix に依存せず冪等判定できる。
+4. `orca linear project list`（`--project` 指定時は `--query` 付き）で Project を取得。**auto モードは state ∈ {started, planned} かつ lane の team に属する Project** に絞る（`project list` は `--team` を持たないためクライアント側で照合）。team 紐付けが JSON に無ければ絞れないので警告して全件対象（fail-open）。**この Orca 版のように `project list` が state を一切返さない場合は active 判定不能なので state 皆無時も fail-open**（lane の team の Project を対象。Linear の list は既定で完了/中止を除外するため実質安全）。
+5. 対象 Project ごとに `proj-<slug>` worktree（未作成なら）を lane を base に作成し、Claude Code を起動。`--issue` 指定時は、その Project worktree（無ければ先に作成）を親に Issue worktree を作成（親/base は Project worktree の**実 branch 名**で解決＝gitUsername prefix 込み）。
 
 **冪等**: 既に存在する `proj-<slug>` / Issue worktree はスキップ。何度実行しても不足分だけ足す。
 
-**dry-run**: 検出した Project の生フィールド（state / team 紐付け / 導出 slug）を一覧表示する。**セットアップ時に、この repo の Linear が返す実際の project JSON 形状に合っているか（state 値・team 紐付けが読めているか）を必ず dry-run で確認**し、ズレていれば dispatcher の `projectState` / `projectTeamKeys` を調整する。
+**dry-run**: 検出した Project の生フィールド（state / team 紐付け / 導出 slug）を一覧表示する。**セットアップ時に、この repo の Linear が返す実際の project JSON 形状に合っているか（state 値・team 紐付けが読めているか）を必ず dry-run で確認**する。state が `?`（＝ `project list` が state を返さない）なら dispatcher は自動で fail-open するが、team 紐付けが読めない場合は `projectTeamKeys` を、state 形状が上表と違い誤判定するなら `projectState` を調整する。
 
 ---
 
@@ -233,4 +233,7 @@ macOS の launchd / cron から `node scripts/orca-linear-dispatch.mjs {{CHILD_T
 - Linear のチーム・Project の新規作成はプログラム（`orca linear`）不可（Web UI / MCP）。
 - Orca は worktree を Linear **Project** に紐付ける手段を持たない（`--linear-project` 無し）。Project worktree の同一性は `proj-<slug>` の名前規約で担保する。Issue worktree は `--linear-issue` でリンクする。
 - `orca linear project list` は `--team` フィルタを持たない。team 絞り込みはクライアント側（dispatcher）で project の team 紐付けフィールドを見て行う。**この JSON 形状は Linear/Orca のバージョンに依存する**ため、セットアップ時に dry-run で必ず検証する（§4・§7）。
+- **`orca linear project list` が project の state を返さない版がある**（`id/name/url/workspace/teams` のみ・`project get` サブコマンド無し）。その場合 auto の active 判定ができないため、dispatcher は state 皆無時 fail-open（lane の Project を対象）にする。Linear の list は既定で完了/中止を除外するので実質安全だが、完了 Project の worktree を作りたくなければ Linear 側で完了にする（§4）。
+- **Orca が branch に git username を前置する環境がある**（`--name proj-x` でも branch=`<user>/proj-x`）。dispatcher は既存 worktree を path basename で索き、Issue worktree の親/base も Project worktree の実 branch 名で解決するので冪等は保たれる。片付けの `orca worktree rm --worktree branch:<...>` は実 branch 名（prefix 込み）で指定する。全統一したいなら Orca アプリ側で git username を空にする。
+- **Project worktree 名の可読性**: 日本語のみの Project 名は `proj-<id8>` になり不透明。Orca 上で判別できるよう Project 名末尾に `[english-slug]` を付ける（dispatcher が id8 に落ちる Project に警告を出す）。詳細は §1・`references/parameters.md`。
 - 本ワークフローは `{{CHILD_TEAM}}`（個別依頼）を主対象とする。`{{PARENT_TEAM}}` 直下の横断・基盤 issue は main worktree で扱う（Project / Issue worktree は切らない運用でよい）。
