@@ -77,4 +77,12 @@ settings.json で配布する場合は、方法 A の `enabledPlugins` に `"mat
 
 未導入でも各スキルは簡易インライン処理／内蔵版（`grill-yourself-with-docs`）にフォールバックする。
 
+## 経理向けプラグイン（別カテゴリ・要リポ read 権限）
+
+経理業務向けには、同じ marketplace の **`soramichi-accounting-plugin`**（セゾンカード明細 → freee 形式 CSV を生成する `saison-card-extractor`）がある。機密情報（カード設定）を含むため実体は private 別リポ `soramichi-git/soramichi-accounting-plugin` に置かれ、カタログからは参照だけを載せている（ADR-0006 のカテゴリ別プラグイン）。install には当該 private リポの read 権限が必要:
+
+```sh
+/plugin install soramichi-accounting-plugin@soramichi-plugins
+```
+
 スキルの用語・設計判断の背景（CONTEXT.md / ADR）は開発元リポジトリで管理している（配布物には含めない）。

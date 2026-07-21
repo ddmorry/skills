@@ -4,7 +4,7 @@
     "name": "SORAMICHI",
     "email": "daisuke_mori@sora-michi.com"
   },
-  "description": "SORAMICHI 社内で共有する Claude Code スキル集。機能開発の設計→実装パイプライン（afk-build-feature / afk-ship / design-feature / grill-yourself-with-docs / to-design-doc）を配布する。",
+  "description": "SORAMICHI 社内で共有する Claude Code プラグインのカタログ。機能開発の設計→実装パイプライン（dev）と、経理業務（accounting）などカテゴリ別プラグインを配布する。",
   "plugins": [
     {
       "name": "soramichi-dev-plugins",
@@ -17,6 +17,23 @@
       "homepage": "https://github.com/soramichi-git/soramichi-plugins",
       "repository": "https://github.com/soramichi-git/soramichi-plugins",
       "keywords": ["soramichi", "workflow", "design", "implementation", "afk", "hitl", "subagent"],
+      "category": "productivity"
+    },
+    {
+      "name": "soramichi-accounting-plugin",
+      "source": {
+        "source": "github",
+        "repo": "soramichi-git/soramichi-accounting-plugin",
+        "ref": "main"
+      },
+      "description": "SORAMICHI 経理向けスキルプラグイン。セゾンカード利用明細を抽出し freee 形式 CSV を生成する saison-card-extractor を含む（soramichi-finance-plugin の経理向け絞り込み版）。機密情報（カード設定）を含むため実体は private 別リポに置き、source: github の外部参照でこのカタログに載せる（ADR-0006 のカテゴリ別プラグイン方針）。旧 soramichi-dev/soramichi-kaikei-plugin の後継。",
+      "author": {
+        "name": "SORAMICHI",
+        "email": "daisuke_mori@sora-michi.com"
+      },
+      "homepage": "https://github.com/soramichi-git/soramichi-accounting-plugin",
+      "repository": "https://github.com/soramichi-git/soramichi-accounting-plugin",
+      "keywords": ["soramichi", "accounting", "keiri", "freee", "saison", "csv"],
       "category": "productivity"
     },
     {
