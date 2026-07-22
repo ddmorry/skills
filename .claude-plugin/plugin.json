@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "soramichi-dev-plugins",
-  "description": "SORAMICHI の設計→実装開発パイプラインを構成する Claude Code スキル 5 本（afk-build-feature / afk-ship / design-feature / grill-yourself-with-docs / to-design-doc）と、それらが委譲する subagent 3 本（coding-agent / grilling-agent / ship-executor）を同梱する。afk-build-feature / afk-ship は承認を挟まず PR マージまで進める無人（AFK）スキル。",
+  "description": "SORAMICHI の開発向け Claude Code スキルを同梱するプラグイン。設計→実装パイプライン（design-feature / grill-yourself-with-docs / to-design-doc / build-feature / afk-build-feature / afk-ship）に加え、GitHub の PR をレビューしてインラインコメントを投稿する review-github-pr を含む。afk-build-feature / afk-ship は承認を挟まず PR マージまで進める無人（AFK）スキル。これらが委譲する subagent 3 本（coding-agent / grilling-agent / ship-executor）も同梱する。",
   "author": {
     "name": "SORAMICHI",
     "email": "daisuke_mori@sora-michi.com"
